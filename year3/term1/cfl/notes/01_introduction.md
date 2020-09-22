@@ -95,7 +95,7 @@ r  ::=  0      nothing
 
 email address: /`[a-z0-9_\.-]+@[a-z0-9\.-]+.[a-z\.]{2,6}`/
 
-```
+```re
 COMMON REGEX NOTATION:
 \               escape following char (e.g. \. or \\)
 ^               match at start of string
@@ -154,7 +154,7 @@ This is a problem for code editors, forums, network intrusion detection systems,
 
 Also known as **Catastrophic Backtracking**, some examples:
 
-```
+```re
 [a?]{n}[a]{n}
 (a*)*b
 ([a‐z]+)*
@@ -166,11 +166,14 @@ Also known as **Catastrophic Backtracking**, some examples:
 
 Real world example (Cloudflare): <https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/>
 guilty expression:
-``?:(?:\"|'|\]|\}|\\|\d|(?:nan|infinity|true|false|null|undefined|symbol|math)|\`|\-|\+)+[)]*;?((?:\s|-|~|!|{}|\|\||\+)*.*(?:.*=.*)))``
+
+```re
+?:(?:\"|'|\]|\}|\\|\d|(?:nan|infinity|true|false|null|undefined|symbol|math)|\`|\-|\+)+[)]*;?((?:\s|-|~|!|{}|\|\||\+)*.*(?:.*=.*)))
+```
 
 ---
 
-#### Languages & Strings
+#### Languages and Strings
 
 **Strings** are just lists of characters, e.g. "hello" / `[h,e,l,l,o]` / *hello*
 The empty string: `[]`, or `""` acts as the additive identity (like 0 for natural/whole numbers).
@@ -206,7 +209,28 @@ If the two given languages are regular, the resulting language is also regular.
 
 #### Meaning & Matching
 
-**The meaning of a regex**:
+**The meaning of a regex (expression language definitions)**:
+
+```re
+L(0)     ≡ {}
+L(1)     ≡ {[]}
+L(c)     ≡ {[c]}
+L(r₁+r₂) ≡ L(r₁) ∪ L(r₂)
+L(r₁·r₂) ≡ {s₁@s₂ | s₁ ∊ L(r₁) ^ s₂ ∊ L(r₂)}
+L(r*)    ≡ 𝖴[0<=n] L(r)ⁿ
+L(r)⁰    ≡ {[]}
+L(r)ⁿ⁺¹  ≡ L(r) @ L(r)ⁿ
+         ... (append on sets)  {s₁@s₂ | s₁ ∊ L(r) ^ s₂ ∊ L(r)ⁿ}
+```
+
+(See [*Operators*](#operators) below)
+
+**The meaning of matching**:
+
+A regular expression `r` matches a string `s` provided: `s ∈ L(r)`
+i.e. if string 's' is a member of the language of the regular expression 'r', then r matches s.
+
+*Lecture 2* aims to solving this problem of matching, as fast as possible!
 
 ---
 
@@ -214,6 +238,49 @@ If the two given languages are regular, the resulting language is also regular.
 
 Good reference guide (Union, Concatenation, Kleene Closure): <https://courses.engr.illinois.edu/cs373/sp2013/Lectures/lec06.pdf>
 
+##### Standard operations
+
+* `∪` Union, `L₁ ∪ L₂` - The set of all strings contained in either (or both) language(s).
+* `∩` Intersection, `L₁ ∩ L₂` - The set of all strings found only in both languages.
+* `∩` Concatenation, `L₁ @ L₂` - The set of all strings of the form ab, where a ∈ L₁ and b ∈ L₂.
+
+##### The Power Operation
+
+The *n*th power of a language, is the concatenation of itself with its previous power:
+*(where the base case `n=0` is the language `L(1)={[]}`, containing only the empty string)*
+
+```re
+A⁰    ≡  {[]}
+Aⁿ⁺¹  ≡  A @ Aⁿ
+```
+
+e.g. `A⁴ = A @ A @ A @ A (@ {[]})`, `A¹ = A`, `A⁰ = {[]}`
+so `{a}⁴ = {aaaa}` and `{a,b}² = {aa, ab, ba, bb}`
+
+##### The Star Operation (Kleene Star)
+
+The *Kleene Star* of a language:
+
+`A* ≡ 𝖴[0<=n] Aⁿ` *(where `𝖴[0<=n]` denotes the union of all sets from 0 to n)*
+
+expanding to:
+`A⁰ 𝖴 A¹ 𝖴 A² 𝖴 A³ 𝖴 ...` or `{[]} 𝖴 A 𝖴 A@A 𝖴 A@A@A 𝖴 ...`
+
+The Kleene star is an **idempotent unary operator**, i.e. `(A*)* = A*` for any set of strings or characters `A`.
+*(The result of the operation is not affected when applied multiple times vs. once)*
+
 ---
 
 #### Questions
+
+ 1) Q) Say `A = {[a], [b], [c], [d]}` - How many strings are in `A⁴`?
+    A) ... TODO
+    `|A@A|` =
+    `|A@A@A|` =
+ 2) Q) What if `A = {[a], [b], [c], []}`?
+    A) ...
+
+ 3) Corner cases: `A @ {[]} = ?` and `A @ {} = ?`
+    (See [*Languages & Strings*](#languages-and-strings) above)
+    * `A @ {[]} = A`
+    * `A @ {} = {}`
