@@ -211,6 +211,8 @@ If the two given languages are regular, the resulting language is also regular.
 
 **The meaning of a regex (expression language definitions)**:
 
+Behind the scenes, regular expressions are trees!
+
 ```re
 L(0)     ≡ {}
 L(1)     ≡ {[]}
@@ -274,11 +276,14 @@ The Kleene star is an **idempotent unary operator**, i.e. `(A*)* = A*` for any s
 #### Questions
 
  1) Q) Say `A = {[a], [b], [c], [d]}` - How many strings are in `A⁴`?
-    A) ... TODO
-    `|A@A|` =
-    `|A@A@A|` =
+    A)
+     * `|A@A|` = `4^2` = 16
+     * `|A@A@A|` = `4^2 x 4` = `4^3` = 64
+     * `|A@A@A@A|` = `4^3 x 4` = `4^4` = 256
+    => `A⁴` has 256 strings
+
  2) Q) What if `A = {[a], [b], [c], []}`?
-    A) ...
+    A) 208
 
  3) Corner cases: `A @ {[]} = ?` and `A @ {} = ?`
     (See [*Languages & Strings*](#languages-and-strings) above)
