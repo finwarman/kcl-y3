@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 # helper function to raise languages to the nth power
 # langpower(a, b, 2) can be used to concat two separate languages
 
@@ -24,6 +26,12 @@ def lang_power(result, base, power):
 #     2
 # )
 
+
+result = lang_power(
+    ['1', '11', '111', '1111'],
+    ['1', '11', '1111', '11111', '11111', '111111', '111111'],
+    2
+)
 
 print('\n')
 print(result)
