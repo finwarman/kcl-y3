@@ -1,0 +1,313 @@
+% !TeX root = ./01_answers.tex
+
+\documentclass[english]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fvextra} % loads also fancyvrb
+\usepackage{pgfgantt}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{dirtytalk}
+\usepackage{xparse}
+\usepackage{xpatch}
+\usepackage[bottom=1.2in,top=1.2in]{geometry}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+
+\DeclareMathVersion{ttmath}
+\DeclareSymbolFont{latinletters}{OT1}{\ttdefault}{m}{n}
+%\SetSymbolFont{latinletters}{ttmath}{OT1}{\ttdefault}{m}{n}
+\SetSymbolFont{letters}{ttmath}{OML}{ccm}{m}{it}
+\SetSymbolFont{symbols}{ttmath}{OMS}{ccsy}{m}{n}
+\SetSymbolFont{largesymbols}{ttmath}{OMX}{ccex}{m}{n}
+
+% https://tex.stackexchange.com/questions/150965/insert-symbols-inside-verbatim-mode-latex/156419
+
+\newcommand{\changeletters}{%
+  \count255=`A
+  \advance\count255 -1
+  \loop\ifnum\count255<`Z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`a
+  \advance\count255 -1
+  \loop\ifnum\count255<`z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`0
+  \advance\count255 -1
+  \loop\ifnum\count255<`9
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+}
+
+\xapptocmd{\ttfamily}{\mathversion{ttmath}\changeletters}{}{}
+
+\setkomafont{disposition}{\normalfont\bfseries}
+\definecolor{light-gray}{gray}{0.95}
+
+\begin{document}
+
+\NewDocumentCommand{\codeword}{v}{%
+\colorbox{light-gray}{\texttt{\textcolor{black}{#1}}}%
+}
+
+% == START: TITLE == %
+
+\subtitle{6CCS3CFL - Compilers \& Formal Languages}
+\title{Homework 1}
+\author{Finley Warman}
+\date{\today}
+
+\maketitle
+
+% == END: TITLE == %
+% == START: CONTENTS == %
+
+\tableofcontents
+\par\noindent\rule{\textwidth}{0.4pt}
+
+% == END: CONTENTS == %
+
+\newpage
+
+% MAIN CONTENT:
+
+\addcontentsline{toc}{section}{Question 1 (Optional)}
+\section*{Question 1}
+Installing Ammonite REPL - \verb|brew install ammonite-repl| on macOS :)
+
+\addcontentsline{toc}{section}{Question 2 (Optional)}
+\section*{Question 2}
+An example of an evil regex in Perl that works on \textit{very} short inputs:
+\\
+\verb|^((((\w*){1,9})*)*){1,9}\s$|
+\\
+e.g. on my machine, taking over 30 seconds to check only 6 characters:
+\begin{Verbatim}
+    perl -e '"aaaaaa" =~ /^((((\w*){1,9})*)*){1,9}\s$/'
+
+    30.44s user
+    0.06s system
+    99% cpu 30.569 total
+\end{Verbatim}
+Source: https://twitter.com/jupenur/status/997135478263549952
+
+
+\addcontentsline{toc}{section}{Question 3}
+\section*{Question 3}
+Q: What is meant by the term \textit{language}?
+\newline
+A: A language is simply a set of strings. e.g. \textit{\{[], foo, bar\}} \\
+\textit{Regular} languages can be described with regular expressions e.g. \verb~13{2,}7(h[a4]x)?~
+
+\addcontentsline{toc}{section}{Question 4}
+\section*{Question 4}
+Q: Give the (inductive) definition for regular expressions.
+   What is the meaning of a regular expression?
+\newline
+A: i. Definition of basic regular expressions:
+\begin{Verbatim}[commandchars=\\\{\}]
+r  ::=  0      nothing
+     |  1      empty string / "" / []
+     |  c      character
+     |  r\textsubscript{1}+r\textsubscript{2}  alternative / choice
+     |  r\textsubscript{1}.r\textsubscript{2}  sequence
+     |  r*     star (zero or more)
+\end{Verbatim}
+A: ii. The meaning of a regular expression:
+\begin{Verbatim}[mathescape,commandchars=\\\{\}]
+    $L(0)$        $\equiv$ \{\}
+    $L(1)$        $\equiv$ \{[]\}
+    $L(c)$        $\equiv$ \{[c]\}
+    $L(r_1 + r_2)$   $\equiv\;L(r_1) \cup L(r_2)$
+    $L(r_1 \cdot r_2)$    $\equiv\;\{s1@s2\;|\;s1 \in L(r_1) \wedge s_2 \in L(r_2)\}$
+    $L(r*)$       $\equiv\;\bigcup_{0 \leq n} L(r)^n$
+    $L(r)^0$       $\equiv$ \{[]\}
+    $L(r)^{n+1}$     $\equiv\;L(r) @ L(r)^n$
+     ... (append on sets)  $\{s_1@s_2\;|\;s_1 \in L(r) \wedge s_2 \in L(r)^n\}$
+\end{Verbatim}
+where \verb.L(0). denotes the empty language, and \verb.L(1). denotes the language containing only the empty string.
+
+\addcontentsline{toc}{section}{Question 5}
+\section*{Question 5}
+Q: Define the operation of \textit{concatenating} two \textbf{sets} of strings. (Given the string concatenation operator \verb.@.)
+\newline
+A: i. Set-builder definition of language concatenation:
+\[
+L_1 @ L_2 \equiv \{ s_1 @ s_2 \;|\; s_1 \in L_1 \wedge s_2 \in L_2 \}
+\]
+\textit{i.e.} the concatenation ($@$) of languages $L_1$ and $L_2$ consists of all possible strings
+formed by concatenating one string ($s_1$) from $L_1$ with another ($s_2$) from $L_2$.
+\\ \\
+Example: \verb.{hello, []}@{world, []} = {hello, world, helloworld}.
+\\ \\
+A: ii. \verb.A@{}. is by this definition therefore \verb.{}. (the empty set)
+\\ \\
+A: iii. \verb.A@B. is not in general equivalent to \verb.B@A. - concatenation is not commutative.
+Counterexample of commutativity: \\
+\verb.if A={foo}, B={bar} then A@B={foobar} and B@A={barfoo}, therefore A@B != B@A . \\
+\\
+For language concatenation, \verb.{[]}. acts as the identity element, as does the empty string \verb.[]. for string concatenation.
+The empty set \verb.{}. acts as a sort of zero-element.
+
+
+\addcontentsline{toc}{section}{Question 6}
+\section*{Question 6}
+Q: \verb.|A| = 4. and \verb.|B| = 7., $[\:] \notin A \wedge [\:] \notin B$. How many strings in \verb.A@B.?
+\newline
+A: \\
+e.g. simple case, at most 28: \verb~{A,B,C,D}@{1,2,3,4,5,6,7}~ \\
+\verb|    | = \verb~{A1,...,A7, B1,...,B7, C1,...,C7, D1,...,D7}~ \\
+\verb|    | $\Rightarrow$ \verb.|A@B| = 4x7 = 28.
+\\
+However, there \textit{can} be fewer if there are duplicates in the resulting string concatenations. \\
+e.g. \verb~{1, 11, 1111, 1111}@{1, 11, 1111, 11111, 111111, 1111111, 11111111}~ - the resulting set has only length \textbf{9}.
+
+\addcontentsline{toc}{section}{Question 7}
+\section*{Question 7}
+Q: How is the power of a language defined?
+\newline
+A: The \textit{n}\textsuperscript{th} power of a language, is the concatenation of itself with its previous power:
+(where the base case $n=0$ is the language $L(1)=\{[]\}$, containing only the empty string)
+
+\begin{Verbatim}[mathescape,commandchars=\\\{\}]
+$A^0 \quad \equiv  \{[\:]\}$
+$A^{n+1} \equiv A@A^n$
+\end{Verbatim}
+
+e.g. $A^4 = A @ A @ A @ A \; (@ \{[\:]\})$, $A^1 = A$, $A^0 = \{[\:]\}$
+
+\quad so $\{a\}^4 = \{aaaa\}$ and $\{a,b\}^2 = \{aa, ab, ba, bb\}$
+
+\addcontentsline{toc}{section}{Question 8}
+\section*{Question 8}
+Q: Let A = \{[a], [b], [c], [d]\}
+\newline
+A: i. How many strings in $\{A\}^4$?
+
+\begin{Verbatim}[mathescape,commandchars=\\\{\}]
+    |A@A|     $= 4^2 \:$        = 16
+    |A@A@A|   $= 4^2 x 4 = 4^3$  = 64
+    |A@A@A@A| $= 4^3 x 4 = 4^4$  = 256
+              => $\{A\}^4$ has 256 strings
+\end{Verbatim}
+
+A: ii. If A = \{[a], [b], [c], []\}, how many strings in $\{A\}^4$?
+
+\begin{Verbatim}[mathescape,commandchars=\\\{\}]
+    |A@A|      = 9 + 4 = 13
+    |A@A@A|    = 40
+    |A@A@A@A|  = 121
+              => $\{A\}^4$ has 121 strings
+\end{Verbatim}
+
+\addcontentsline{toc}{section}{Question 9}
+\section*{Question 9}
+Q: i. How many basic regular expressions to match \verb.abcd.? \\
+Q: ii. How many if excluding \verb.1. and \verb.0.? \\
+Q: iii. How many if not allowed to contain stars (\verb.*.)? \\
+Q: iiii. How many if not allowed to contain choices (\verb._+_.)? \\
+\newline
+A: i. A boundless number, since you can append \textbf{0} or \textbf{1} indefinitely to a valid regex. \\
+A: ii. Still any number: \verb|(z* . (a.b.c.d)| or \verb|((x.z)* . (a.b.c.d)|, etc. \\
+A: iii. Still any number: \verb|(a.b.c.d) + (a.b.c.d) + ...| \\
+A: iiii. 5: (Remember, regular expressions are trees):
+\begin{itemize}
+  \item \verb|(a.(b.c)).d|
+  \item \verb|(a.b).(c.d)|
+  \item \verb|((a.b).c).d|
+  \item \verb|a.((b.c).d)|
+  \item \verb|a.(b.(c.d))|
+\end{itemize}
+
+N.B. In this case, this is equivalent to the \textit{Catalan number} for \verb|n=3|, i.e.
+\[
+  C_n = \binom{2n}{n} - \binom{2n}{n+1} = \frac{1}{n+1}\binom{2n}{n} \text{ for } n \ge 0
+\]
+
+$C_n$ is the number of ways to of associating $n$ applications of a binary operator (aka. the parenthesisation of $n+1$ values connected by an associative binary operator). \\
+\\
+This is because successive applications of a binary operator can be represented in terms of a full binary tree,
+so this value is the number of distinct ways to arrange such a tree with $n+1$ (unlabelled) leaves
+\\ i.e. $C_n$ is the number of non-isomorphic ordered trees with $n + 1$ vertices
+\\
+The first few Catalan numbers are $$1,1,2,5,14,42,132,429,1430,4862$$
+
+\addcontentsline{toc}{section}{Question 10}
+\section*{Question 10}
+Q: i. When are two regular expressions equivalent? \\
+Q: ii. Example(s) of non-obviously identical expressions.\\
+\newline
+A: i. Two regular expressions are equivalent when their languages are the same, i.e. the match the same set of strings.\\
+\\
+An approach for determining equivalence between two regular expressions is to convert them both to deterministic finite automata (DFA).
+(Possibly by first converting to an NFA, then converting this to a DFA). \\
+If these DFA are minimised, then it is simple to determine if they accept the same language as each minimal DFA is unique, and so both should be isomorphic if the languages are the same. \\
+\\
+A: ii. The following are equivalent, though it is not immediately obvious:
+\begin{itemize}
+    \item (a.a.b + b.a.a.b) + ((a + b)* . a.a.b)
+    \item (a + b)* . ((b.a.a.b + a.a.b + b.b.b.b.b.b.a.a.a.a.a.a.b + b.b.b.b.b.a.a.b) + ((a.a + a.a.a + b.a.a) . b))
+\end{itemize}
+Both only matching strings containing `a' and `b', ending with the substring `aab'.
+\\ \\
+A general example: \verb~r* == 1 + r · r*~ for any regular expression \textbf{r}.
+\\
+Since \verb~r*~ matches zero-or-more of \verb~r~, this is equivalent to matching the empty string \textbf{1}, OR one-or-more of \verb~r~.
+
+
+\addcontentsline{toc}{section}{Question 11}
+\section*{Question 11}
+Q: What is meant by \textit{evil regular expressions} and \textit{catastrophic backtracking}?
+\newline
+A: 'Evil' regular expressions are expressions that have an exponential time complexity, meaning for sufficiently large strings
+(which may be smaller than expected!), they become prohibitively expensive to compute a match.
+They can be accidental, or malicious to launch an intentional ReDOS (Regex Denial-Of-Service) attack.
+\\
+\\
+The exponential time complexity is due to \textit{catastrophic backtracking}; this can occur when expressions contains nested quantifiers,
+and one of the inner expressions is a match which is also the suffix of another match. If this does not reach a complete match early, the
+regex engine will exhaustively search all the possible matching substrings for each combination of quantifier in order to find a match.
+
+
+\addcontentsline{toc}{section}{Question 12}
+\section*{Question 12}
+Q: Given the regular expression $(a+b)^* \cdot b \cdot (a+b)^*$, which are equivalent?
+\newline
+A: "any amount of a or b, followed by b, followed by any amount of a or b" \\
+= any non-empty string containing `b', consisting only of `a' and `b'.
+\begin{itemize}
+    \item[1)] $(ab+bb)^* \cdot (a+b)^*$ - NO (matches empty string)
+    \item[2)] $(a+b)^* \cdot (ba + bb + b) \cdot (a+b)^*$ - YES
+    \item[3)] $(a+b)^* \cdot (a + b) \cdot (a+b)^*$ - NO (matches `a')
+\end{itemize}
+
+\addcontentsline{toc}{section}{Question 13 (Optional)}
+\section*{Question 13}
+Q: Feedback!
+\newline
+A: The online lecture format is great - easily digestible, clear, and to-the-point.
+The amount of available material and resources on KEATS is also great.
+\\
+Initially looking at the lecture slides, I found these hard to follow alone, without context. However, the handouts supplement this well (and this is not an issue when reading along while watching the lecture, as intended!).
+\\
+I'm looking forward to the rest of this module!
+
+\end{document}
