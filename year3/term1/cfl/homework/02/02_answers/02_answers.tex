@@ -1,0 +1,222 @@
+% !TeX root = ./02_answers.tex
+
+\documentclass[english]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fvextra} % loads also fancyvrb
+\usepackage{pgfgantt}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{dirtytalk}
+\usepackage{xparse}
+\usepackage{xpatch}
+\usepackage[bottom=1.2in,top=1.2in]{geometry}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+
+\DeclareMathVersion{ttmath}
+\DeclareSymbolFont{latinletters}{OT1}{\ttdefault}{m}{n}
+%\SetSymbolFont{latinletters}{ttmath}{OT1}{\ttdefault}{m}{n}
+\SetSymbolFont{letters}{ttmath}{OML}{ccm}{m}{it}
+\SetSymbolFont{symbols}{ttmath}{OMS}{ccsy}{m}{n}
+\SetSymbolFont{largesymbols}{ttmath}{OMX}{ccex}{m}{n}
+
+% https://tex.stackexchange.com/questions/150965/insert-symbols-inside-verbatim-mode-latex/156419
+
+\newcommand{\changeletters}{%
+  \count255=`A
+  \advance\count255 -1
+  \loop\ifnum\count255<`Z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`a
+  \advance\count255 -1
+  \loop\ifnum\count255<`z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`0
+  \advance\count255 -1
+  \loop\ifnum\count255<`9
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+}
+
+\xapptocmd{\ttfamily}{\mathversion{ttmath}\changeletters}{}{}
+
+\setkomafont{disposition}{\normalfont\bfseries}
+\definecolor{light-gray}{gray}{0.95}
+
+\begin{document}
+
+\NewDocumentCommand{\codeword}{v}{%
+\colorbox{light-gray}{\texttt{\textcolor{black}{#1}}}%
+}
+
+% == START: TITLE == %
+
+\subtitle{6CCS3CFL - Compilers \& Formal Languages}
+\title{Homework 2}
+\author{Finley Warman}
+\date{\today}
+
+\maketitle
+
+% == END: TITLE == %
+% == START: CONTENTS == %
+
+\tableofcontents
+\par\noindent\rule{\textwidth}{0.4pt}
+
+% == END: CONTENTS == %
+
+\newpage
+
+% MAIN CONTENT:
+
+\addcontentsline{toc}{section}{Question 1}
+\section*{Question 1}
+Q: What is the difference between basic and extended regular expressions?
+
+A: 'Basic' Regular Expressions are those defined by the grammar of \\
+\verb~r: 0, 1, c (char), ALT, SEQ, STAR~ - they represent the formal concept of regular expressions. \\
+'Extended' Regular Expressions are those found in most modern programming languages, with extended features for matching patterns in strings,
+ such as \verb~a{n}, a+, etc.~ Some of these features are simply
+syntactic sugar over features found in basic regular expressions.
+
+\addcontentsline{toc}{section}{Question 2}
+\section*{Question 2}
+Q: What is the language recognised by regular expression \verb|(0*)*|?
+
+Through the following simplifications: \\
+\verb~ (0*)* -> (0)* -> 0* -> 0  ~ we can show that \verb~(0*)* == 0~. \\
+Therefore this expression only matches the empty language, \verb~L(0) = {}~.
+
+\addcontentsline{toc}{section}{Question 3}
+\section*{Question 3}
+Q: Decide which of the following are true in general for arbitrary languages A, B, andC. (Assuming alphabet {a, b})
+
+A: $(A \cup B)@C =? A@C \cup B@C$ \\
+YES - TODO, explain
+
+A: $A* \cup B* =? (A \cup B)*$ \\
+NO -
+\begin{verbatim}
+A={a}, B={b}
+A*    = {[], a, aa, aaa, ...}
+B*    = {[], b, bb, bbb, ...}
+A*UB* = {[], a, b, aa, bb, aaa, bbb}
+
+AUB    = {a, b}
+(AUB)* = {[], a, b, ab, ..}
+
+"ab" not in A*UB* and in (AUB)*, therefore A*UB* !== (AUB)*
+
+\end{verbatim}
+
+A: $A*@A* =? A*$ \\
+YES
+
+A: $(A \cap B)@C =? (A@C)\cap(B@C)$ \\
+TODO
+
+\addcontentsline{toc}{section}{Question 4}
+\section*{Question 4}
+Q: Given expressions \verb|r1 = 1| and \verb|r2 = 0| and \verb|r2 = a|,
+how many strings can the regular expressions $r_1^*$, $r_2^*$, and $r_3^*$ each match?
+
+\addcontentsline{toc}{section}{Question 5}
+\section*{Question 5}
+Q: Give regular expressions for a) decimal numbers, and b) binary numbers
+NB: empty string is not a number, leading 0s are not normally written (e.g. forbidden is JSON).\\
+
+A: Decimals: \verb~ 0 + ((1+2+3+4+5+6+7+8+9).(0+1+2+3+4+5+6+7+8+9)*) ~ \\
+A: Binary: \verb~ 0 + (1.(0+1)*) ~
+
+\addcontentsline{toc}{section}{Question 6}
+\section*{Question 6}
+Q: Decide whether the following two regular expressions are equivalent: \\
+\verb|(1+a)* ==? a* AND (a.b)*.a ==? a.(b.a)*|
+
+A: YES; \verb|(1+a)*| - `the empty string or a, any number of times', this is equivalent to `accept 0 or more a, or the empty string', which is \verb~a*~. \\
+A: YES; \verb|(a.b)*.a == a.(b.a)*|
+
+\addcontentsline{toc}{section}{Question 7}
+\section*{Question 7}
+Q: Given the regular expressions r = (a.b+b), compute what the derivate of r is w.r.t. a, b, and c. Is r nullable?
+
+\addcontentsline{toc}{section}{Question 8}
+\section*{Question 8}
+[Moved to Homework 3]
+
+\addcontentsline{toc}{section}{Question 9}
+\section*{Question 9}
+Q: Define what is meant by the derivative of a regular expression w.r.t a characters. (Hint: it is defined recursively)
+
+A: The derivate of a regular expression r w.r.t. to a character c is the expression matching only s if r matches c::s, i.e. the resulting expression
+matches only the tail of every string starting with character c.
+
+\begin{verbatim}
+  der c (0)     == 0
+  der c (1)     == 0
+  der c (d)     == if c=d then 1 else 0
+  der c (r1+r2) == der c (r1) + der c (r2)
+  der c (r1.r2) == if nullable(r1):
+                     then: (der c r1) . r2 + der c r2
+                     else: (der c r1) . r2
+  der c (r*)    == (der c r) . (r*)
+\end{verbatim}
+
+\addcontentsline{toc}{section}{Question 10}
+\section*{Question 10}
+Q: Assume the set \verb|Der| is defined as: \\
+\verb~Der c A == {s | c::s ~$\in$\verb~ A}~ \\
+What is the relation between Der, and the notion of derivatives of regular expressions. \\
+A: TODO
+
+\addcontentsline{toc}{section}{Question 11}
+\section*{Question 11}
+Q: Give a rexp over {a, b} recognising all strings that do not contain any substring bb and end in a. \\
+A: \verb~  ((b.(bb)*) + a)* . a ~
+
+\addcontentsline{toc}{section}{Question 12}
+\section*{Question 12}
+A: NO, the former accepts "bab" whereas the latter does not.
+
+\addcontentsline{toc}{section}{Question 13}
+\section*{Question 13}
+A: TODO
+
+\addcontentsline{toc}{section}{Question 14}
+\section*{Question 14}
+A: Interpreting this as the set of all strings \verb~a{n}~ where n is a multiple of 3, plus one.\\
+\verb~ (a.a.a)*.a ~
+
+\addcontentsline{toc}{section}{Question 15}
+\section*{Question 15}
+A: \verb~  (a.(a.a)*) + (b.b)*  ~
+
+\addcontentsline{toc}{section}{Question 16 (Optional)}
+\section*{Question 16 (Optional)}
+This tool created for Stanford's CS103 class is built for working with DFAs and NFAs, including parsing regular expressions to these automata. \\
+https://github.com/bakkot/dfa-lib \\
+It also contains functionality for comparing these automata for equivalence, and finding a counterexample where they are not. \\
+This library is used at https://bakkot.github.io/dfa-lib/regeq.html which is a regex equivalence checker. \\
+\\
+A cursory look at the source shows that this finds these counterexamples by finding the shortest string accepted by the resulting intersection (a new DFA) of machine A, and the complement of machine B (if such a string exists), and vice-versa.
+\end{document}
