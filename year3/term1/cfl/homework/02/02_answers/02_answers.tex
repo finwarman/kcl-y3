@@ -124,15 +124,16 @@ A*UB* = {[], a, b, aa, bb, aaa, bbb}
 
 AUB    = {a, b}
 (AUB)* = {[], a, b, ab, ..}
-
-\textit{"ab"} not in A* $\cup$ B* and is in (A $\cup$ B)*, therefore A* $\cup$ B* !== (A $\cup$ B)*
 \end{Verbatim}
-
+\textit{"ab"} not in A* $\cup$ B* and is in (A $\cup$ B)*, therefore A* $\cup$ B* !== (A $\cup$ B)* \\
+\\
 A: $A*@A* =? A*$ \\
 YES - Since the Kleene star of a language is the union of that language raised to every power >= 0, squaring the Kleene star itself will contain no additional strings.
 \\ \\
 A: $(A \cap B)@C =? (A@C)\cap(B@C)$ \\
-YES (in general, $(A \cap B) \times C = (A \times B) \cap (B \times C)$)
+NO, due to the presence of the empty string. \\
+e.g. \verb|A = {[a]}, B = {[]} and C = {[a], []}| \\
+(in general, $(A \cap B) \times C = (A \times B) \cap (B \times C)$, but @ and $\times$ are not the same operation)
 
 \addcontentsline{toc}{section}{Question 4}
 \section*{Question 4}
@@ -146,7 +147,6 @@ A: r1* can match 1 string, $\epsilon$, r2* can match 0 strings, and r3 can match
 Q: Give regular expressions for a) decimal numbers, and b) binary numbers
 NB: empty string is not a number, leading 0s are not normally written (e.g. forbidden is JSON).\\
 \\
- \\
 A: Decimal: \verb~ 0 + ((1+2+3+4+5+6+7+8+9).(0+1+2+3+4+5+6+7+8+9)*) ~ \\
 A: Binary: \verb~ 0 + (1.(0+1)*) ~
 
@@ -157,7 +157,7 @@ Q: Decide whether the following two regular expressions are equivalent: \\
 \\
 A: YES; \verb|(1+a)*| - `the empty string or a, any number of times', this is equivalent to `accept 0 or more a, or the empty string', which is \verb~a*~. \\
 \\
-A: YES; \verb|(a.b)*.a == a.(b.a)*|
+A: YES; \verb|(a.b)*.a == a.(b.a)*| - both of these describe a string starting with a, possibly followed by b or a any number times, also ending in a. (Possibly only length 1 string "a")
 
 \addcontentsline{toc}{section}{Question 7}
 \section*{Question 7}
@@ -206,6 +206,7 @@ A: \verb~  ((b.(bb)*) + a)* . a ~
 
 \addcontentsline{toc}{section}{Question 12}
 \section*{Question 12}
+Q: Do \verb|(a+b)*.b+ and (a*.b+)+(b*.b+)| define the same language? \\
 A: NO, the former accepts "bab" whereas the latter does not.
 
 \addcontentsline{toc}{section}{Question 13}
@@ -213,14 +214,14 @@ A: NO, the former accepts "bab" whereas the latter does not.
 A:
 zeroable(r) iff L(r) = \{\}
 
-\begin{verbatim}
+\begin{Verbatim}[mathescape,commandchars=\\\{\}]
   zeroable(0)        = true
   zeroable(1)        = false
   zeroable(c)        = false
-  zeroable(r1 + r2)  = zeroable(r1) && zeroable(r2)
-  zeroable(r1 . r2)  = zeroable(r1) && zeroable(r2)
+  zeroable(r1 + r2)  = zeroable(r1) $\wedge$ zeroable(r2)
+  zeroable(r1 . r2)  = zeroable(r1) $\vee$ zeroable(r2)
   zeroable(r*)       = zeroable(r)
-\end{verbatim}
+\end{Verbatim}
 
 
 A: Where does \verb| zeroable(~r) != ~(zeroable(r)) |? \\
