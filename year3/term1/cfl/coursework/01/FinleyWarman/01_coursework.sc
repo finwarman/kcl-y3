@@ -1,15 +1,9 @@
-// A version with simplification of derivatives;
-// this keeps the regular expressions small, which
-// is good for the run-time
-//
-// call the test cases with X = {1,2}
-//
-//   amm re3.sc testX
-//
-// or
-//
-//   amm re3.sc all
+//  Run Tests:
+//    amm 01_coursework.sc test{x}
+//  or
+//    amm re3.sc all
 
+// ===== CLASS DEFINITIONS =====
 
 abstract class Rexp
 case object ZERO extends Rexp
@@ -20,7 +14,9 @@ case class SEQ(r1: Rexp, r2: Rexp) extends Rexp
 case class STAR(r: Rexp) extends Rexp
 case class NTIMES(r: Rexp, n: Int) extends Rexp
 
+// ==============================
 
+// ====== FUNCTION DEFINITIONS =====
 
 // the nullable function: tests whether the regular
 // expression can recognise the empty string
@@ -80,13 +76,24 @@ def matcher(r: Rexp, s: String) : Boolean =
 // one or zero
 def OPT(r: Rexp) = ALT(r, ONE)
 
+// size of a regular expressions - for testing purposes
+def size(r: Rexp) : Int = r match {
+  case ZERO => 1
+  case ONE => 1
+  case CHAR(_) => 1
+  case ALT(r1, r2) => 1 + size(r1) + size(r2)
+  case SEQ(r1, r2) => 1 + size(r1) + size(r2)
+  case STAR(r) => 1 + size(r)
+  case NTIMES(r, _) => 1 + size(r)
+}
 
-// Test Cases
+// ==============================
+
+// ===== TESTS =====
 
 // evil regular expressions: (a?){n} a{n}  and (a*)* b
 def EVIL1(n: Int) = SEQ(NTIMES(OPT(CHAR('a')), n), NTIMES(CHAR('a'), n))
 val EVIL2 = SEQ(STAR(STAR(CHAR('a'))), CHAR('b'))
-
 
 def time_needed[T](i: Int, code: => T) = {
   val start = System.nanoTime()
@@ -118,31 +125,22 @@ def test2() = {
   }
 }
 
-// size of a regular expressions - for testing purposes
-def size(r: Rexp) : Int = r match {
-  case ZERO => 1
-  case ONE => 1
-  case CHAR(_) => 1
-  case ALT(r1, r2) => 1 + size(r1) + size(r2)
-  case SEQ(r1, r2) => 1 + size(r1) + size(r2)
-  case STAR(r) => 1 + size(r)
-  case NTIMES(r, _) => 1 + size(r)
-}
-
-
-// now the size of the derivatives grows
-// much, much slower
-
-size(ders("".toList, EVIL2))      // 5
-size(ders("a".toList, EVIL2))     // 8
-size(ders("aa".toList, EVIL2))    // 8
-size(ders("aaa".toList, EVIL2))   // 8
-size(ders("aaaa".toList, EVIL2))  // 8
-size(ders("aaaaa".toList, EVIL2)) // 8
+// size of expressions example
+// size(ders("".toList, EVIL2))      // 5
+// size(ders("a".toList, EVIL2))     // 8
+// size(ders("aa".toList, EVIL2))    // 8
+// size(ders("aaa".toList, EVIL2))   // 8
+// size(ders("aaaa".toList, EVIL2))  // 8
+// size(ders("aaaaa".toList, EVIL2)) // 8
 
 
 @doc("All tests.")
 @main
 def all() = { test1(); test2() }
+
+// ==============================
+
+
+
 
 
