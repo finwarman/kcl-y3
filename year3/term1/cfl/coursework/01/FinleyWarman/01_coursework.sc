@@ -12,135 +12,170 @@ case class CHAR(c: Char) extends Rexp
 case class ALT(r1: Rexp, r2: Rexp) extends Rexp
 case class SEQ(r1: Rexp, r2: Rexp) extends Rexp
 case class STAR(r: Rexp) extends Rexp
+// Extended:
+// RANGE, PLUS, OPTIONAL, NTIMES, UPTO, FROM, BETWEEN
+case class RANGE(r: Rexp, chars: Set[Char]) extends Rexp
+case class PLUS(r: Rexp) extends Rexp
+case class OPTIONAL(r: Rexp) extends Rexp
 case class NTIMES(r: Rexp, n: Int) extends Rexp
+case class UPTO(r: Rexp, m: Int) extends Rexp
+case class FROM(r: Rexp, n: Int) extends Rexp
+case class BETWEEN(r: Rexp, n: Int, m: Int) extends Rexp
 
 // ==============================
 
 // ====== FUNCTION DEFINITIONS =====
 
+// Extended features:
+
+// range
+// def RANGE(chars : Set[Char]) : Char => Boolean = {   (ch) => chars.contains(ch)  }
+
+// plus r - 1 or more
+
+// optional r - one or zero
+// def OPTIONAL(r: Rexp) = ALT(r, ONE)
+
+// exactly n times r
+
+// zero or more r, up to m times
+
+// n or more times r
+
+// at least n times r but no more than m times
+
+// a set of characters for character ranges
+
+// not-regular-expression of r
+
+// ------
+
 // the nullable function: tests whether the regular
 // expression can recognise the empty string
-def nullable (r: Rexp) : Boolean = r match {
-  case ZERO => false
-  case ONE => true
-  case CHAR(_) => false
-  case ALT(r1, r2) => nullable(r1) || nullable(r2)
-  case SEQ(r1, r2) => nullable(r1) && nullable(r2)
-  case STAR(_) => true
-  case NTIMES(r, i) => if (i == 0) true else nullable(r)
-}
+def nullable(r: Rexp): Boolean =
+  r match {
+    case ZERO        => false
+    case ONE         => true
+    case CHAR(_)     => false
+    case ALT(r1, r2) => nullable(r1) || nullable(r2)
+    case SEQ(r1, r2) => nullable(r1) && nullable(r2)
+    case STAR(_)     => true
+    // Extended cases:
+    case NTIMES(r, i) => if (i == 0) true else nullable(r)
+  }
 
 // the derivative of a regular expression w.r.t. a character
-def der (c: Char, r: Rexp) : Rexp = r match {
-  case ZERO => ZERO
-  case ONE => ZERO
-  case CHAR(d) => if (c == d) ONE else ZERO
-  case ALT(r1, r2) => ALT(der(c, r1), der(c, r2))
-  case SEQ(r1, r2) =>
-    if (nullable(r1)) ALT(SEQ(der(c, r1), r2), der(c, r2))
-    else SEQ(der(c, r1), r2)
-  case STAR(r1) => SEQ(der(c, r1), STAR(r1))
-  case NTIMES(r, i) =>
-    if (i == 0) ZERO else SEQ(der(c, r), NTIMES(r, i - 1))
-}
-
-def simp(r: Rexp) : Rexp = r match {
-  case ALT(r1, r2) => (simp(r1), simp(r2)) match {
-    case (ZERO, r2s) => r2s
-    case (r1s, ZERO) => r1s
-    case (r1s, r2s) => if (r1s == r2s) r1s else ALT (r1s, r2s)
+def der(c: Char, r: Rexp): Rexp =
+  r match {
+    case ZERO        => ZERO
+    case ONE         => ZERO
+    case CHAR(d)     => if (c == d) ONE else ZERO
+    case ALT(r1, r2) => ALT(der(c, r1), der(c, r2))
+    case SEQ(r1, r2) =>
+      if (nullable(r1)) ALT(SEQ(der(c, r1), r2), der(c, r2))
+      else SEQ(der(c, r1), r2)
+    case STAR(r1) => SEQ(der(c, r1), STAR(r1))
+    // Extended cases:
+    case NTIMES(r, i) =>
+      if (i == 0) ZERO else SEQ(der(c, r), NTIMES(r, i - 1))
   }
-  case SEQ(r1, r2) =>  (simp(r1), simp(r2)) match {
-    case (ZERO, _) => ZERO
-    case (_, ZERO) => ZERO
-    case (ONE, r2s) => r2s
-    case (r1s, ONE) => r1s
-    case (r1s, r2s) => SEQ(r1s, r2s)
-  }
-  case r => r
-}
 
+// simplify the given expression 'inside out', using common simplifications - reduces bloat
+def simp(r: Rexp): Rexp =
+  r match {
+    case ALT(r1, r2) =>
+      (simp(r1), simp(r2)) match {
+        case (ZERO, r2s) => r2s
+        case (r1s, ZERO) => r1s
+        case (r1s, r2s)  => if (r1s == r2s) r1s else ALT(r1s, r2s)
+      }
+    case SEQ(r1, r2) =>
+      (simp(r1), simp(r2)) match {
+        case (ZERO, _)  => ZERO
+        case (_, ZERO)  => ZERO
+        case (ONE, r2s) => r2s
+        case (r1s, ONE) => r1s
+        case (r1s, r2s) => SEQ(r1s, r2s)
+      }
+    case r => r
+  }
 
 // the derivative w.r.t. a string (iterates der)
-def ders(s: List[Char], r: Rexp) : Rexp = s match {
-  case Nil => r
-  case c::s => ders(s, simp(der(c, r)))
-}
-
+def ders(s: List[Char], r: Rexp): Rexp =
+  s match {
+    case Nil    => r
+    case c :: s => ders(s, simp(der(c, r)))
+  }
 
 // the main matcher function
-def matcher(r: Rexp, s: String) : Boolean =
+def matcher(r: Rexp, s: String): Boolean =
   nullable(ders(s.toList, r))
-
-
-// one or zero
-def OPT(r: Rexp) = ALT(r, ONE)
-
-// size of a regular expressions - for testing purposes
-def size(r: Rexp) : Int = r match {
-  case ZERO => 1
-  case ONE => 1
-  case CHAR(_) => 1
-  case ALT(r1, r2) => 1 + size(r1) + size(r2)
-  case SEQ(r1, r2) => 1 + size(r1) + size(r2)
-  case STAR(r) => 1 + size(r)
-  case NTIMES(r, _) => 1 + size(r)
-}
 
 // ==============================
 
 // ===== TESTS =====
 
-// evil regular expressions: (a?){n} a{n}  and (a*)* b
-def EVIL1(n: Int) = SEQ(NTIMES(OPT(CHAR('a')), n), NTIMES(CHAR('a'), n))
-val EVIL2 = SEQ(STAR(STAR(CHAR('a'))), CHAR('b'))
-
-def time_needed[T](i: Int, code: => T) = {
-  val start = System.nanoTime()
-  for (j <- 1 to i) code
-  val end = System.nanoTime()
-  (end - start)/(i * 1.0e9)
-}
-
-
-//
-@doc("Test (a?{n}) (a{n})")
-@main
-def test1() = {
-  println("Test (a?{n}) (a{n})")
-
-  for (i <- 0 to 9000 by 1000) {
-    println(f"$i: ${time_needed(3, matcher(EVIL1(i), "a" * i))}%.5f")
+def assertTest(result: Any, expected: Any, testName: String) = {
+  print("Testing '" + testName + "'... \t");
+  try {
+    assert(result == expected);
+    println(Console.GREEN + "PASS");
+  } catch {
+    case ae: AssertionError => {
+      println(Console.RED + "FAIL");
+      println(f"\t - (Expected: $expected | Actual: $result)");
+    }
+    case e: Exception => throw e
   }
+  print(Console.WHITE);
 }
 
-//
-@doc("Test (a*)* b")
+@doc("RANGE")
 @main
-def test2() = {
-  println("Test (a*)* b")
-
-  for (i <- 0 to 6000000 by 500000) {
-    println(f"$i: ${time_needed(3, matcher(EVIL2, "a" * i))}%.5f")
-  }
+def testCharSet() = {
+  println("\nTesting RANGE:");
+  println("TODO");
+  true;
 }
 
-// size of expressions example
-// size(ders("".toList, EVIL2))      // 5
-// size(ders("a".toList, EVIL2))     // 8
-// size(ders("aa".toList, EVIL2))    // 8
-// size(ders("aaa".toList, EVIL2))   // 8
-// size(ders("aaaa".toList, EVIL2))  // 8
-// size(ders("aaaaa".toList, EVIL2)) // 8
+@doc("PLUS")
+@main
+def testPlus() = {
+  println("\nTesting PLUS:");
+  println("TODO");
+  true;
+}
 
+@doc("OPTIONAL")
+@main
+def testOptional() = {
+  println("\nTesting OPTIONAL:");
+  println("TODO");
+  true;
+}
+
+@doc("NTIMES")
+@main
+def testNTimes() = {
+  println("\nTesting OPTIONAL:");
+
+  // a{5}
+  val R1 = NTIMES(CHAR('a'), 5);
+
+  assertTest(matcher(R1, "aaaaa"), true, "a{5} matches aaaaa");
+  assertTest(matcher(R1, "aaaa"), true, "a{5} doesn't match aaaa");
+}
+
+// RUN ALL:
 
 @doc("All tests.")
 @main
-def all() = { test1(); test2() }
+def all() = {
+  testCharSet();
+  testPlus();
+  testOptional();
+  testNTimes();
+  println("\nDone :)");
+}
 
 // ==============================
-
-
-
-
-
