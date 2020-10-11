@@ -28,6 +28,7 @@ case class NOT(r: Rexp) extends Rexp
 // CFUN
 case class CFUN(f: Char => Boolean) extends Rexp
 
+// infix operators for SEQ and ALT for more readable expressions!
 implicit class RexpOps(private val r1: Rexp) extends AnyVal {
   def + (r2: Rexp): Rexp = ALT(r1, r2)
   def o (r2: Rexp): Rexp = SEQ(r1, r2)
