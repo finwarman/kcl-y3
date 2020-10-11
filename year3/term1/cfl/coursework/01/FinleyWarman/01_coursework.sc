@@ -103,9 +103,10 @@ def der(c: Char, r: Rexp): Rexp =
     case OPTIONAL(r) => der(c, r)
 
     case BETWEEN(r, n, m) =>
-      if (n == 0) ZERO
-      else if (n == m) der(c, NTIMES(r, n))
-      else SEQ(der(c, r), BETWEEN(r, n + 1, m))
+      if (n == 0) {
+        if (m == 0) ZERO
+        else SEQ(der(c, r), BETWEEN(r, n, m - 1))
+      } else SEQ(der(c, r), BETWEEN(r, n - 1, m - 1))
     // ======================
   }
 
@@ -187,8 +188,17 @@ def testFrom() = {
 @main
 def testBetween() = {
   println("\nTesting BETWEEN:");
-  println("TODO");
-  true;
+
+  // a{3, 6}
+  val R1 = BETWEEN(CHAR('a'), 3, 6);
+  assertTest(matcher(R1, "aaa"), true, "a{3, 6} matches aaa");
+  assertTest(matcher(R1, "aaaaaa"), true, "a{3, 6} matches aaaaaa");
+  assertTest(matcher(R1, "aaaa"), true, "a{3, 6} matches aaaa");
+  assertTest(matcher(R1, "a"), false, "a{3, 6} doesn't match a");
+  assertTest(matcher(R1, "aaaaaaa"), false, "a{3, 6} doesn't match aaaaaaa");
+  assertTest(matcher(R1, "aaaab"), false, "a{3, 6} doesn't match aaaab");
+
+  println();
 }
 
 @doc("PLUS")
