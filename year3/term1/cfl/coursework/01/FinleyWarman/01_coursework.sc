@@ -327,11 +327,55 @@ def testNot() = {
   println();
 }
 
+@doc("Question 3 - Table Test")
+@main
+def question3() = {
+  println("Question 3 - Table Test:\n");
+
+  var testCases = collection.mutable.HashMap(
+    "a?"         -> OPTIONAL(CHAR('a')),
+    "~a"         -> NOT(CHAR('a')),
+    "a{3}"       -> NTIMES(CHAR('a'), 3),
+    "(a?){3}"    -> NTIMES(OPTIONAL(CHAR('a')), 3),
+    "a{..3}"     -> UPTO(CHAR('a'), 3),
+    "(a?){..3}"  -> UPTO(OPTIONAL(CHAR('a')), 3),
+    "a{3..5}"    -> BETWEEN(CHAR('a'), 3, 5),
+    "(a?){3..5}" -> BETWEEN(OPTIONAL(CHAR('a')), 3, 5),
+    "a{0}"       -> NTIMES(CHAR('a'), 0)
+  );
+
+  var strings = (0 to 6).map( n => "a" * n )
+
+  // Table Header
+  println("        | " + (testCases.keys mkString "  | ") + "  |");
+
+  print("--------+");
+  testCases.keys.foreach( name => {
+      print(("-" * (name.length()+3)) + "+");
+  });
+  print("\n")
+
+  strings.foreach( str => {
+    print((if (str.length() > 0) str else "[]").padTo(7, ' ') + " | ");
+
+    testCases.keys.foreach( name => {
+        val R1 = testCases.getOrElse(name, throw new RuntimeException("Not Found"));
+        val result = matcher(R1, str);
+
+        print((if (result) ("YES") else "-").padTo(name.length() + 1, ' ') + " | ");
+    });
+
+    print("\n");
+  })
+  print("\n");
+}
+
 // ==== RUN ALL: ======
 
 @doc("All tests.")
 @main
 def all() = {
+  println("Unit Tests:");
   testRange();
   testFrom();
   testBetween();
@@ -341,6 +385,9 @@ def all() = {
   testNTimes();
   testNot();
   println("Done :)");
+  println();
+  println("Coursework Questions:\n");
+  question3();
 }
 
 // ==============================
