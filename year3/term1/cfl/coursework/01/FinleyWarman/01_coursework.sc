@@ -23,7 +23,7 @@ case class NTIMES(r: Rexp, n: Int) extends Rexp
 case class UPTO(r: Rexp, m: Int) extends Rexp
 case class FROM(r: Rexp, n: Int) extends Rexp
 case class BETWEEN(r: Rexp, n: Int, m: Int) extends Rexp
-// TODO - NOT
+case class NOT(r: Rexp) extends Rexp
 
 // ==============================
 
@@ -71,11 +71,8 @@ def nullable(r: Rexp): Boolean =
     case UPTO(r, m)       => true
     case FROM(r, n)       => if (n == 0) true else nullable(r)
     case BETWEEN(r, n, m) => if (n == 0) true else nullable(r)
-    case RANGE(chars)     => false // TODO - ? chars.size == 0
-    // TODO case NOT(r)  =>
-    //     if (nullable(r) == ZERO) ONE
-    //     else ZERO // nullable(r) == ONE
-
+    case RANGE(chars)     => false // TODO - ? chars.size == 0 INVALID
+    case NOT(r)           => !(nullable(r))
     // ======================
   }
 
@@ -179,7 +176,8 @@ def testRange() = {
   // [a,b,c,d]
   val R1 = RANGE(Set('a', 'b', 'c', 'd'));
   assertTest(matcher(R1, "a"), true, "[a,b,c,d] matches a");
-  assertTest(matcher(R1, "b"), true, "[a,b,c,d] matches a");
+  assertTest(matcher(R1, "b"), true, "[a,b,c,d] matches b");
+  assertTest(matcher(R1, "ab"), false, "[a,b,c,d] doesn't match ab");
   assertTest(matcher(R1, ""), false, "[a,b,c,d] doesn't match empty string");
 
   // [a,b]+
