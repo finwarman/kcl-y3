@@ -320,9 +320,9 @@ def testNot() = {
   val R1 = NOT(CHAR('a'));
   assertTest(matcher(R1, "b"), true, "~a matches b");
   assertTest(matcher(R1, "ab"), true, "~a matches ab");
+  assertTest(matcher(R1, "aaa"), true, "~a matches aaa");
   assertTest(matcher(R1, "a"), false, "~a doesn't match a");
 
-  println("TODO: MORE TESTS!"); // TODO
 
   println();
 }
@@ -332,7 +332,7 @@ def testNot() = {
 def question3() = {
   println("Question 3 - Table Test:\n");
 
-  var testCases = collection.mutable.HashMap(
+  var testCases = collection.mutable.LinkedHashMap(
     "a?"         -> OPTIONAL(CHAR('a')),
     "~a"         -> NOT(CHAR('a')),
     "a{3}"       -> NTIMES(CHAR('a'), 3),
