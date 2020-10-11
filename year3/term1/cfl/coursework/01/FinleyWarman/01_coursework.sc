@@ -470,6 +470,33 @@ def question6() = {
     println();
 }
 
+@doc("Question 7")
+@main
+def question7() = {
+    println("Question 7:\n");
+
+    val R1 = CFUN(_CHAR('A')) o CFUN(_CHAR('A')) o CFUN(_CHAR('A'));
+    val R2 = (BETWEEN(CFUN(_CHAR('A')), 19, 19)) o (OPTIONAL(CFUN(_CHAR('A'))))
+
+    val five = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    val six = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    val seven = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+    val R1PlusPlus = PLUS(PLUS(R1));
+    val R2PlusPlus = PLUS(PLUS(R2));
+
+    assertTest(matcher(R1PlusPlus, five), true, "(R1+)+ match 5");
+    assertTest(matcher(R1PlusPlus, six), true, "(R1+)+ match 6");
+    assertTest(matcher(R1PlusPlus, seven), true, "(R1+)+ match 7");
+
+    assertTest(matcher(R2PlusPlus, five), true, "(R2+)+ match 5");
+    assertTest(matcher(R2PlusPlus, six), true, "(R2+)+ match 6");
+    assertTest(matcher(R2PlusPlus, seven), true, "(R2+)+ match 7");
+
+    println("\nDone!")
+    println();
+}
+
 // ==== RUN ALL: ======
 
 @doc("All tests.")
@@ -492,6 +519,7 @@ def all() = {
   question4();
   question5();
   question6();
+  question7();
 }
 
 // ==============================
