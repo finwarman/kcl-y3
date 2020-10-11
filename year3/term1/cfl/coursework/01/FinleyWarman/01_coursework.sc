@@ -71,7 +71,7 @@ def nullable(r: Rexp): Boolean =
     case UPTO(r, m)       => true
     case FROM(r, n)       => if (n == 0) true else nullable(r)
     case BETWEEN(r, n, m) => if (n == 0) true else nullable(r)
-    case RANGE(chars)     => chars.size == 0
+    case RANGE(chars)     => false // TODO - ? chars.size == 0
     // TODO case NOT(r)  =>
     //     if (nullable(r) == ZERO) ONE
     //     else ZERO // nullable(r) == ONE
@@ -117,7 +117,7 @@ def der(c: Char, r: Rexp): Rexp =
         SEQ(der(c, r), FROM(r, n)) // TODO - can also use STAR instead of FROM
       else SEQ(der(c, r), FROM(r, n - 1))
 
-    case RANGE(chars) => if (chars.exists(d => { c == d })) ONE else ZERO
+    case RANGE(chars) => if (chars.contains(c)) ONE else ZERO
     // ======================
   }
 
