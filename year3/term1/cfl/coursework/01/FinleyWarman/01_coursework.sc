@@ -115,6 +115,8 @@ def der(c: Char, r: Rexp): Rexp =
       else SEQ(der(c, r), FROM(r, n - 1))
 
     case RANGE(chars) => if (chars.contains(c)) ONE else ZERO
+
+    case NOT(r) => NOT(der(c, r))
     // ======================
   }
 
@@ -309,6 +311,22 @@ def testNTimes() = {
   println();
 }
 
+@doc("NOT")
+@main
+def testNot() = {
+  println("\nTesting NOT:");
+
+  // ~a
+  val R1 = NOT(CHAR('a'));
+  assertTest(matcher(R1, "b"), true, "~a matches b");
+  assertTest(matcher(R1, "ab"), true, "~a matches ab");
+  assertTest(matcher(R1, "a"), false, "~a doesn't match a");
+
+  println("TODO: MORE TESTS!"); // TODO
+
+  println();
+}
+
 // ==== RUN ALL: ======
 
 @doc("All tests.")
@@ -321,7 +339,7 @@ def all() = {
   testPlus();
   testOptional();
   testNTimes();
-  // TODO: NOT
+  testNot();
   println("Done :)");
 }
 
