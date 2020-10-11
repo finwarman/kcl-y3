@@ -107,6 +107,10 @@ def der(c: Char, r: Rexp): Rexp =
         if (m == 0) ZERO
         else SEQ(der(c, r), BETWEEN(r, n, m - 1))
       } else SEQ(der(c, r), BETWEEN(r, n - 1, m - 1))
+
+    case UPTO(r, m) =>
+      if (m == 0) ZERO
+      else SEQ(der(c, r), UPTO(r, m - 1))
     // ======================
   }
 
@@ -172,8 +176,21 @@ def testRange() = {
 @main
 def testUpTo() = {
   println("\nTesting UPTO:");
-  println("TODO");
-  true;
+
+  // a{..2}
+  val R1 = UPTO(CHAR('a'), 2);
+  assertTest(matcher(R1, ""), true, "a{..2} matches empty string");
+  assertTest(matcher(R1, "a"), true, "a{..2} matches a");
+  assertTest(matcher(R1, "aa"), true, "a{..2} matches aa");
+  assertTest(matcher(R1, "aaa"), false, "a{..2} doesn't match aaa");
+
+  // ab{..3}c
+  val R2 = SEQ(CHAR('a'), SEQ(UPTO(CHAR('b'), 3), CHAR('c')));
+  assertTest(matcher(R2, "ac"), true, "ab{..3}c matches ac");
+  assertTest(matcher(R2, "abbc"), true, "ab{..3}c matches abbc");
+  assertTest(matcher(R2, "abbbbc"), false, "ab{..3}c doesn't match abbbbc");
+
+  println();
 }
 
 @doc("FROM")
