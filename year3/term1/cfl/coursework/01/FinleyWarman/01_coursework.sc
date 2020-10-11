@@ -116,14 +116,14 @@ def matcher(r: Rexp, s: String): Boolean =
 // ===== TESTS =====
 
 def assertTest(result: Any, expected: Any, testName: String) = {
-  print("Testing '" + testName + "'... \t");
+  print(("Testing '" + testName + "'...").padTo(50, ' '));
   try {
     assert(result == expected);
     println(Console.GREEN + "PASS");
   } catch {
     case ae: AssertionError => {
       println(Console.RED + "FAIL");
-      println(f"\t - (Expected: $expected | Actual: $result)");
+      println(f"\tExpected: $expected, Actual: $result");
     }
     case e: Exception => throw e
   }
@@ -132,7 +132,7 @@ def assertTest(result: Any, expected: Any, testName: String) = {
 
 @doc("RANGE")
 @main
-def testCharSet() = {
+def testRange() = {
   println("\nTesting RANGE:");
   println("TODO");
   true;
@@ -161,9 +161,21 @@ def testNTimes() = {
 
   // a{5}
   val R1 = NTIMES(CHAR('a'), 5);
-
   assertTest(matcher(R1, "aaaaa"), true, "a{5} matches aaaaa");
-  assertTest(matcher(R1, "aaaa"), true, "a{5} doesn't match aaaa");
+  assertTest(matcher(R1, "aaaa"), false, "a{5} doesn't match aaaa");
+
+  // ab{2}c{3}
+  val R2 = SEQ(
+    CHAR('a'),
+    SEQ(
+      NTIMES(CHAR('b'), 2),
+      NTIMES(CHAR('c'), 3)
+    )
+  );
+  assertTest(matcher(R2, "abbccc"), true, "ab{2}c{3} matches abbccc");
+  assertTest(matcher(R2, "aabbcc"), false, "ab{2}c{3} doesn't match aabbcc");
+
+  println();
 }
 
 // RUN ALL:
@@ -171,7 +183,7 @@ def testNTimes() = {
 @doc("All tests.")
 @main
 def all() = {
-  testCharSet();
+  testRange();
   testPlus();
   testOptional();
   testNTimes();
