@@ -28,6 +28,11 @@ case class NOT(r: Rexp) extends Rexp
 // CFUN
 case class CFUN(f: Char => Boolean) extends Rexp
 
+implicit class RexpOps(private val r1: Rexp) extends AnyVal {
+  def + (r2: Rexp): Rexp = ALT(r1, r2)
+  def o (r2: Rexp): Rexp = SEQ(r1, r2)
+}
+
 // ====== FUNCTION DEFINITIONS =====
 
 // CFUN related functions:
@@ -316,6 +321,26 @@ def testNot() = {
   println();
 }
 
+@doc("Custom Infix Operators")
+@main
+def testCustomInfix() = {
+  println("\nTesting Custom Infix Operators:");
+
+  // abc ("'a' o 'b' o 'c'")
+  val R1 = CHAR('a') o CHAR('b') o CHAR('c');
+  assertTest(matcher(R1, "abc"), true, "[SEQ = o]: a.b.c matches abc");
+  assertTest(matcher(R1, "abcd"), false, "[SEQ = o]: a.b.c doesn't match abcd");
+
+  // a+b+c ("'a' + 'b' + 'c'")
+  val R2 = CHAR('a') + CHAR('b') + CHAR('c');
+  assertTest(matcher(R2, "a"), true, "[ALT = +]: a+b+c matches a");
+  assertTest(matcher(R2, "b"), true, "[ALT = +]: a+b+c matches b");
+  assertTest(matcher(R2, "ab"), false, "[ALT = +]: a+b+c doesn't match ab");
+  assertTest(matcher(R2, "d"), false, "[ALT = +]: a+b+c doesn't match d");
+
+  println();
+}
+
 @doc("Question 3 - Table Test")
 @main
 def question3() = {
@@ -400,6 +425,50 @@ def question4() = {
     println();
 }
 
+@doc("Question 5 - Email")
+@main
+def question5() = {
+    println("Question 5 - Email:");
+
+    val lower = ('a' to 'z').toSet; // [a-z]
+    val digits = ('0' to '9').toSet; // [0-9]
+
+    val R_NAME = PLUS(CFUN(_RANGE(lower ++ digits + '_' + '.' + '-'))); // [a-z0-9_.-]+
+    val R_DOMAIN = PLUS(CFUN(_RANGE(lower ++ digits + '.' + '-'))); // [a-z0-9.-]+
+    val R_TLD = BETWEEN(CFUN(_RANGE(lower + '.')), 2, 6); // [a-z.]{2,6}
+
+    // ([a-z0-9_.-]+)@([a-z0-9.-]+).([a-z.]{2,6})
+    val R_EMAIL = SEQ(R_NAME, SEQ(CFUN(_CHAR('@')), SEQ(R_DOMAIN, SEQ(CFUN(_CHAR('.')),R_TLD))));
+
+    val matches_email = matcher(R_EMAIL, "finley.warman@kcl.ac.uk");
+    val der_wrt_email = ders("finley.warman@kcl.ac.uk".toList, R_EMAIL);
+
+    assertTest(matches_email, true, "My email matches the regular expression");
+    println(der_wrt_email); // TODO - fix the use of 'star' above in plus
+
+    println("\nDone!")
+    println();
+}
+
+@doc("Question 6")
+@main
+def question6() = {
+    println("Question 6:");
+
+    // val R1 =
+    //     SEQ(CFUN(_CHAR('/')),
+    //     SEQ(CFUN(_CHAR('*')),
+    //     SEQ(
+    //         NOT((SEQ))
+    //     )));
+
+    println("TODO");
+    // TODO here - try and match 4 strings
+
+    println("\nDone!")
+    println();
+}
+
 // ==== RUN ALL: ======
 
 @doc("All tests.")
@@ -414,11 +483,13 @@ def all() = {
   testOptional();
   testNTimes();
   testNot();
+  testCustomInfix(); // custom infix operators (RexpOps class)
   println("Done :)");
   println();
   println("Coursework Questions:\n");
   question3();
   question4();
+  question5();
 }
 
 // ==============================
