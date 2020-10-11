@@ -3,6 +3,8 @@
 //  or
 //    amm re3.sc all
 
+// TODO: look at https://www.ccs.neu.edu/home/turon/re-deriv.pdf
+
 // ===== CLASS DEFINITIONS =====
 
 abstract class Rexp
@@ -21,6 +23,8 @@ case class NTIMES(r: Rexp, n: Int) extends Rexp
 case class UPTO(r: Rexp, m: Int) extends Rexp
 case class FROM(r: Rexp, n: Int) extends Rexp
 case class BETWEEN(r: Rexp, n: Int, m: Int) extends Rexp
+
+// TODO - negation
 
 // ==============================
 
@@ -60,8 +64,20 @@ def nullable(r: Rexp): Boolean =
     case ALT(r1, r2) => nullable(r1) || nullable(r2)
     case SEQ(r1, r2) => nullable(r1) && nullable(r2)
     case STAR(_)     => true
-    // Extended cases:
-    case NTIMES(r, i) => if (i == 0) true else nullable(r)
+
+    // === Extended Cases ===
+    case NTIMES(r, n)     => if (n == 0) true else nullable(r)
+    case PLUS(r)          => nullable(r)
+    case OPTIONAL(r)      => true
+    case UPTO(r, m)       => true
+    case FROM(r, n)       => if (n == 0) true else nullable(r)
+    case BETWEEN(r, n, m) => if (n == 0) true else nullable(r)
+    // TODO case RANGE    =>
+    // TODO case NOT(r)  =>
+    //     if (nullable(r) == ZERO) ONE
+    //     else ZERO // nullable(r) == ONE
+
+    // ======================
   }
 
 // the derivative of a regular expression w.r.t. a character
@@ -75,9 +91,22 @@ def der(c: Char, r: Rexp): Rexp =
       if (nullable(r1)) ALT(SEQ(der(c, r1), r2), der(c, r2))
       else SEQ(der(c, r1), r2)
     case STAR(r1) => SEQ(der(c, r1), STAR(r1))
-    // Extended cases:
-    case NTIMES(r, i) =>
-      if (i == 0) ZERO else SEQ(der(c, r), NTIMES(r, i - 1))
+
+    // === Extended Cases ===
+    case NTIMES(r, n) =>
+      if (n == 0) ZERO
+      else SEQ(der(c, r), NTIMES(r, n - 1))
+
+    case PLUS(r) =>
+      SEQ(der(c, r), STAR(r)) // one of r matches, followed by zero-or-more of r
+
+    case OPTIONAL(r) => der(c, r)
+
+    case BETWEEN(r, n, m) =>
+      if (n == 0) ZERO
+      else if (n == m) der(c, NTIMES(r, n))
+      else SEQ(der(c, r), BETWEEN(r, n + 1, m))
+    // ======================
   }
 
 // simplify the given expression 'inside out', using common simplifications - reduces bloat
@@ -138,26 +167,75 @@ def testRange() = {
   true;
 }
 
+@doc("UPTO")
+@main
+def testUpTo() = {
+  println("\nTesting UPTO:");
+  println("TODO");
+  true;
+}
+
+@doc("FROM")
+@main
+def testFrom() = {
+  println("\nTesting FROM:");
+  println("TODO");
+  true;
+}
+
+@doc("BETWEEN")
+@main
+def testBetween() = {
+  println("\nTesting BETWEEN:");
+  println("TODO");
+  true;
+}
+
 @doc("PLUS")
 @main
 def testPlus() = {
   println("\nTesting PLUS:");
-  println("TODO");
-  true;
+
+  // a+
+  val R1 = PLUS(CHAR('a'));
+  assertTest(matcher(R1, "a"), true, "a+ matches a");
+  assertTest(matcher(R1, "aaaa"), true, "a+ matches aaaa");
+  assertTest(matcher(R1, "ba"), false, "a+ doesn't match ba");
+
+  // a+b+
+  val R2 = SEQ(PLUS(CHAR('a')), PLUS(CHAR('b')));
+  assertTest(matcher(R2, "ab"), true, "a+b+ matches ab");
+  assertTest(matcher(R2, "aaabb"), true, "a+b+ matches aaabb");
+  assertTest(matcher(R2, "aaa"), false, "a+b+ doesn't match aaa");
+
+  println();
 }
 
 @doc("OPTIONAL")
 @main
 def testOptional() = {
   println("\nTesting OPTIONAL:");
-  println("TODO");
-  true;
+
+  // a?
+  val R1 = OPTIONAL(CHAR('a'));
+  assertTest(matcher(R1, "a"), true, "a? matches a");
+  assertTest(matcher(R1, ""), true, "a? matches empty string");
+  assertTest(matcher(R1, "ab"), false, "a? doesn't match ab");
+
+  // a?cb?
+  val R2 = SEQ(OPTIONAL(CHAR('a')), SEQ(CHAR('c'), OPTIONAL(CHAR('b'))));
+  assertTest(matcher(R2, "acb"), true, "a?cb? matches acb");
+  assertTest(matcher(R2, "c"), true, "a?cb? matches c");
+  assertTest(matcher(R2, "aacb"), false, "a?cb? doesn't match aacb");
+  assertTest(matcher(R2, "ab"), false, "a?cb? doesn't match ab");
+
+  println();
 }
 
 @doc("NTIMES")
 @main
 def testNTimes() = {
-  println("\nTesting OPTIONAL:");
+  println("\nTesting NTIMES:");
 
   // a{5}
   val R1 = NTIMES(CHAR('a'), 5);
@@ -165,13 +243,7 @@ def testNTimes() = {
   assertTest(matcher(R1, "aaaa"), false, "a{5} doesn't match aaaa");
 
   // ab{2}c{3}
-  val R2 = SEQ(
-    CHAR('a'),
-    SEQ(
-      NTIMES(CHAR('b'), 2),
-      NTIMES(CHAR('c'), 3)
-    )
-  );
+  val R2 = SEQ(CHAR('a'), SEQ(NTIMES(CHAR('b'), 2), NTIMES(CHAR('c'), 3)));
   assertTest(matcher(R2, "abbccc"), true, "ab{2}c{3} matches abbccc");
   assertTest(matcher(R2, "aabbcc"), false, "ab{2}c{3} doesn't match aabbcc");
 
@@ -184,10 +256,13 @@ def testNTimes() = {
 @main
 def all() = {
   testRange();
+  testFrom();
+  testBetween();
+  testUpTo();
   testPlus();
   testOptional();
   testNTimes();
-  println("\nDone :)");
+  println("Done :)");
 }
 
 // ==============================
