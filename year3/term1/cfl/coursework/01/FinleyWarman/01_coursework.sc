@@ -15,16 +15,15 @@ case class ALT(r1: Rexp, r2: Rexp) extends Rexp
 case class SEQ(r1: Rexp, r2: Rexp) extends Rexp
 case class STAR(r: Rexp) extends Rexp
 // Extended:
-// RANGE, PLUS, OPTIONAL, NTIMES, UPTO, FROM, BETWEEN
-case class RANGE(r: Rexp, chars: Set[Char]) extends Rexp
+// RANGE, PLUS, OPTIONAL, NTIMES, UPTO, FROM, BETWEEN, NOT
+case class RANGE(chars: Set[Char]) extends Rexp
 case class PLUS(r: Rexp) extends Rexp
 case class OPTIONAL(r: Rexp) extends Rexp
 case class NTIMES(r: Rexp, n: Int) extends Rexp
 case class UPTO(r: Rexp, m: Int) extends Rexp
 case class FROM(r: Rexp, n: Int) extends Rexp
 case class BETWEEN(r: Rexp, n: Int, m: Int) extends Rexp
-
-// TODO - negation
+// TODO - NOT
 
 // ==============================
 
@@ -72,7 +71,7 @@ def nullable(r: Rexp): Boolean =
     case UPTO(r, m)       => true
     case FROM(r, n)       => if (n == 0) true else nullable(r)
     case BETWEEN(r, n, m) => if (n == 0) true else nullable(r)
-    // TODO case RANGE    =>
+    case RANGE(chars)     => chars.size == 0
     // TODO case NOT(r)  =>
     //     if (nullable(r) == ZERO) ONE
     //     else ZERO // nullable(r) == ONE
@@ -99,6 +98,7 @@ def der(c: Char, r: Rexp): Rexp =
 
     case PLUS(r) =>
       SEQ(der(c, r), STAR(r)) // one of r matches, followed by zero-or-more of r
+    // TODO - is this allowed?
 
     case OPTIONAL(r) => der(c, r)
 
@@ -111,6 +111,13 @@ def der(c: Char, r: Rexp): Rexp =
     case UPTO(r, m) =>
       if (m == 0) ZERO
       else SEQ(der(c, r), UPTO(r, m - 1))
+
+    case FROM(r, n) =>
+      if (n == 0)
+        SEQ(der(c, r), FROM(r, n)) // TODO - can also use STAR instead of FROM
+      else SEQ(der(c, r), FROM(r, n - 1))
+
+    case RANGE(chars) => if (chars.exists(d => { c == d })) ONE else ZERO
     // ======================
   }
 
@@ -168,8 +175,20 @@ def assertTest(result: Any, expected: Any, testName: String) = {
 @main
 def testRange() = {
   println("\nTesting RANGE:");
-  println("TODO");
-  true;
+
+  // [a,b,c,d]
+  val R1 = RANGE(Set('a', 'b', 'c', 'd'));
+  assertTest(matcher(R1, "a"), true, "[a,b,c,d] matches a");
+  assertTest(matcher(R1, "b"), true, "[a,b,c,d] matches a");
+  assertTest(matcher(R1, ""), false, "[a,b,c,d] doesn't match empty string");
+
+  // [a,b]+
+  val R2 = PLUS(RANGE(Set('a', 'b')));
+  assertTest(matcher(R2, "ab"), true, "[a,b,c,d]+ matches ab");
+  assertTest(matcher(R2, "aaaa"), true, "[a,b,c,d]+ matches aaaa");
+  assertTest(matcher(R2, ""), false, "[a,b,c,d]+ doesn't match empty string");
+
+  println();
 }
 
 @doc("UPTO")
@@ -197,8 +216,22 @@ def testUpTo() = {
 @main
 def testFrom() = {
   println("\nTesting FROM:");
-  println("TODO");
-  true;
+
+  // a{2..}
+  val R1 = FROM(CHAR('a'), 2);
+  assertTest(matcher(R1, "aa"), true, "a{2..} matches aa");
+  assertTest(matcher(R1, "aaa"), true, "a{2..} matches aaa");
+  assertTest(matcher(R1, "a"), false, "a{2..} doesn't match a");
+  assertTest(matcher(R1, ""), false, "a{2..} doesn't match empty string");
+
+  // ab{3..}c
+  val R2 = SEQ(CHAR('a'), SEQ(FROM(CHAR('b'), 3), CHAR('c')));
+  assertTest(matcher(R2, "abbbc"), true, "ab{3..}c matches abbbc");
+  assertTest(matcher(R2, "abbbbc"), true, "ab{..3}c matches abbbbc");
+  assertTest(matcher(R2, "abc"), false, "ab{3..}c doesn't match abc");
+  assertTest(matcher(R2, "ac"), false, "ab{3..}c doesn't match ac");
+
+  println();
 }
 
 @doc("BETWEEN")
@@ -227,6 +260,7 @@ def testPlus() = {
   val R1 = PLUS(CHAR('a'));
   assertTest(matcher(R1, "a"), true, "a+ matches a");
   assertTest(matcher(R1, "aaaa"), true, "a+ matches aaaa");
+  assertTest(matcher(R1, ""), false, "a+ doesn't match empty string");
   assertTest(matcher(R1, "ba"), false, "a+ doesn't match ba");
 
   // a+b+
@@ -277,7 +311,7 @@ def testNTimes() = {
   println();
 }
 
-// RUN ALL:
+// ==== RUN ALL: ======
 
 @doc("All tests.")
 @main
@@ -289,6 +323,7 @@ def all() = {
   testPlus();
   testOptional();
   testNTimes();
+  // TODO: NOT
   println("Done :)");
 }
 
