@@ -14,7 +14,7 @@ case class CHAR(c: Char) extends Rexp
 case class ALT(r1: Rexp, r2: Rexp) extends Rexp
 case class SEQ(r1: Rexp, r2: Rexp) extends Rexp
 case class STAR(r: Rexp) extends Rexp
-// Extended:
+// Extended (Q3):
 // RANGE, PLUS, OPTIONAL, NTIMES, UPTO, FROM, BETWEEN, NOT
 case class RANGE(chars: Set[Char]) extends Rexp
 case class PLUS(r: Rexp) extends Rexp
@@ -24,34 +24,16 @@ case class UPTO(r: Rexp, m: Int) extends Rexp
 case class FROM(r: Rexp, n: Int) extends Rexp
 case class BETWEEN(r: Rexp, n: Int, m: Int) extends Rexp
 case class NOT(r: Rexp) extends Rexp
-
-// ==============================
+// Extended (Q4):
+// CFUN
+case class CFUN(f: Char => Boolean) extends Rexp
 
 // ====== FUNCTION DEFINITIONS =====
 
-// Extended features:
-
-// range
-// def RANGE(chars : Set[Char]) : Char => Boolean = {   (ch) => chars.contains(ch)  }
-
-// plus r - 1 or more
-
-// optional r - one or zero
-// def OPTIONAL(r: Rexp) = ALT(r, ONE)
-
-// exactly n times r
-
-// zero or more r, up to m times
-
-// n or more times r
-
-// at least n times r but no more than m times
-
-// a set of characters for character ranges
-
-// not-regular-expression of r
-
-// ------
+// CFUN related functions:
+def _CHAR(ch: Char): Char => Boolean = { (c: Char) => {(ch == c)} }
+def _RANGE(chars: Set[Char]) : Char => Boolean = { (c: Char) => {chars.contains(c)} }
+def _ALL() : Char => Boolean = { (c: Char) => true}
 
 // the nullable function: tests whether the regular
 // expression can recognise the empty string
@@ -71,8 +53,10 @@ def nullable(r: Rexp): Boolean =
     case UPTO(r, m)       => true
     case FROM(r, n)       => if (n == 0) true else nullable(r)
     case BETWEEN(r, n, m) => if (n == 0) true else nullable(r)
-    case RANGE(chars)     => false // TODO - ? chars.size == 0 INVALID
+    case RANGE(chars)     => false
     case NOT(r)           => !(nullable(r))
+    // == Q4 ==
+    case CFUN(f)          => false
     // ======================
   }
 
@@ -86,7 +70,7 @@ def der(c: Char, r: Rexp): Rexp =
     case SEQ(r1, r2) =>
       if (nullable(r1)) ALT(SEQ(der(c, r1), r2), der(c, r2))
       else SEQ(der(c, r1), r2)
-    case STAR(r1) => SEQ(der(c, r1), STAR(r1))
+    case STAR(r) => SEQ(der(c, r), STAR(r))
 
     // === Extended Cases ===
     case NTIMES(r, n) =>
@@ -117,6 +101,11 @@ def der(c: Char, r: Rexp): Rexp =
     case RANGE(chars) => if (chars.contains(c)) ONE else ZERO
 
     case NOT(r) => NOT(der(c, r))
+
+    // == Q4 ==
+
+    case CFUN(f) => if (f(c)) ONE else ZERO
+
     // ======================
   }
 
@@ -365,9 +354,50 @@ def question3() = {
         print((if (result) ("YES") else "-").padTo(name.length() + 1, ' ') + " | ");
     });
 
-    print("\n");
+    println();
   })
-  print("\n");
+  println();
+}
+
+@doc("Question 4 - CFUN")
+@main
+def question4() = {
+    println("Question 4 - CFUN Tests:");
+
+    // char
+    println("\nTesting _CHAR (c):");
+    val R1 = CFUN(_CHAR('a'));
+    assertTest(matcher(R1, "a"), true, "CFUN: a matches a");
+    assertTest(matcher(R1, "b"), false, "CFUN: a doesn't match b");
+    assertTest(matcher(R1, "aa"), false, "CFUN: a doesn't match aa");
+    assertTest(matcher(R1, ""), false, "CFUN: a doesn't match empty string");
+
+    // range
+    println("\nTesting _RANGE ([abc]):");
+    val R2 = CFUN(_RANGE(Set('a','b','c', 'd')));
+    assertTest(matcher(R2, "a"), true, "CFUN: [a,b,c,d] matches a");
+    assertTest(matcher(R2, "b"), true, "CFUN: [a,b,c,d] matches b");
+    assertTest(matcher(R2, "ab"), false, "CFUN: [a,b,c,d] doesn't match ab");
+    assertTest(matcher(R2, ""), false, "CFUN: [a,b,c,d] doesn't match empty string");
+
+    // all
+    println("\nTesting _ALL (.):");
+    val R3 = CFUN(_ALL);
+    assertTest(matcher(R3, "a"), true, "CFUN: . matches a");
+    assertTest(matcher(R3, "b"), true, "CFUN: . matches a");
+    assertTest(matcher(R3, "c"), true, "CFUN: . matches a");
+    assertTest(matcher(R3, "ab"), false, "CFUN: . doesn't match ab");
+
+    // with other operators
+    println("\nTesting CFUN with various operators:");
+    assertTest(matcher(PLUS(CFUN(_ALL())), "abcdefg"), true, ".+ matches abcdefg");
+    assertTest(matcher(PLUS(CFUN(_ALL())), ""), false, ".+ doesn't match empty string");
+    assertTest(matcher(NTIMES(CFUN(_RANGE(Set('a','b','c'))), 3), "abc"), true, "[abc]{3} matches abc");
+    assertTest(matcher(NTIMES(CFUN(_RANGE(Set('a','b','c'))), 3), "aaa"), true, "[abc]{3} matches aaa");
+    assertTest(matcher(NTIMES(CFUN(_RANGE(Set('a','b','c'))), 3), "a"), false, "[abc]{3} doesn't match a");
+
+    println("\nDone!")
+    println();
 }
 
 // ==== RUN ALL: ======
@@ -388,6 +418,7 @@ def all() = {
   println();
   println("Coursework Questions:\n");
   question3();
+  question4();
 }
 
 // ==============================
