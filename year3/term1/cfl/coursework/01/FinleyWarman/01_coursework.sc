@@ -157,7 +157,7 @@ def matcher(r: Rexp, s: String): Boolean =
 // ===== TESTS =====
 
 def assertTest(result: Any, expected: Any, testName: String) = {
-  print(("Testing '" + testName + "'...").padTo(50, ' '));
+  print(("Testing '" + testName + "'...").padTo(55, ' '));
   try {
     assert(result == expected);
     println(Console.GREEN + "PASS");
