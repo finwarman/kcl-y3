@@ -428,7 +428,7 @@ def question4() = {
 @doc("Question 5 - Email")
 @main
 def question5() = {
-    println("Question 5 - Email:");
+    println("Question 5 - Email:\n");
 
     val lower = ('a' to 'z').toSet; // [a-z]
     val digits = ('0' to '9').toSet; // [0-9]
@@ -444,6 +444,8 @@ def question5() = {
     val der_wrt_email = ders("finley.warman@kcl.ac.uk".toList, R_EMAIL);
 
     assertTest(matches_email, true, "My email matches the regular expression");
+
+    println("TODO!");
     println(der_wrt_email); // TODO - fix the use of 'star' above in plus
 
     println("\nDone!")
@@ -453,17 +455,16 @@ def question5() = {
 @doc("Question 6")
 @main
 def question6() = {
-    println("Question 6:");
+    println("Question 6:\n");
 
-    // val R1 =
-    //     SEQ(CFUN(_CHAR('/')),
-    //     SEQ(CFUN(_CHAR('*')),
-    //     SEQ(
-    //         NOT((SEQ))
-    //     )));
+    // \/\*(~(.*\*\/.*))\*\/
+    val R1 = CFUN(_CHAR('/')) o CFUN(_CHAR('*')) o (NOT(STAR(CFUN(_ALL)) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')) o STAR(CFUN(_ALL) )) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')));
 
-    println("TODO");
-    // TODO here - try and match 4 strings
+    println("Testing \\/\\*(~(.*\\*\\/.*))\\*\\/ matches:");
+    assertTest(matcher(R1, "/**/"), true, "/**/"); // yes
+    assertTest(matcher(R1, "/*foobar*/"), true, "/*foobar*/"); // yes
+    assertTest(matcher(R1, "/*test*/test*/"), false, "/*test*/test*/"); // no
+    assertTest(matcher(R1, "/*test/*test*/"), true, "/*test/*test*/"); // yes
 
     println("\nDone!")
     println();
@@ -490,6 +491,7 @@ def all() = {
   question3();
   question4();
   question5();
+  question6();
 }
 
 // ==============================
