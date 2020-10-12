@@ -150,6 +150,7 @@ def matcher(r: Rexp, s: String): Boolean =
 
 // ===== TESTS =====
 
+// Helper function to pretty-print test results
 def assertTest(result: Any, expected: Any, testName: String) = {
   print(("Testing '" + testName + "'...").padTo(55, ' '));
   try {
@@ -172,16 +173,16 @@ def testRange() = {
 
   // [a,b,c,d]
   val R1 = RANGE(Set('a', 'b', 'c', 'd'));
-  assertTest(matcher(R1, "a"), true, "[a,b,c,d] matches a");
-  assertTest(matcher(R1, "b"), true, "[a,b,c,d] matches b");
+  assertTest(matcher(R1, "a"),  true, "[a,b,c,d] matches a");
+  assertTest(matcher(R1, "b"),  true, "[a,b,c,d] matches b");
   assertTest(matcher(R1, "ab"), false, "[a,b,c,d] doesn't match ab");
-  assertTest(matcher(R1, ""), false, "[a,b,c,d] doesn't match empty string");
+  assertTest(matcher(R1, ""),   false, "[a,b,c,d] doesn't match empty string");
 
   // [a,b]+
   val R2 = PLUS(RANGE(Set('a', 'b')));
-  assertTest(matcher(R2, "ab"), true, "[a,b,c,d]+ matches ab");
-  assertTest(matcher(R2, "aaaa"), true, "[a,b,c,d]+ matches aaaa");
-  assertTest(matcher(R2, ""), false, "[a,b,c,d]+ doesn't match empty string");
+  assertTest(matcher(R2, "ab"),   true,  "[a,b,c,d]+ matches ab");
+  assertTest(matcher(R2, "aaaa"), true,  "[a,b,c,d]+ matches aaaa");
+  assertTest(matcher(R2, ""),     false, "[a,b,c,d]+ doesn't match empty string");
 
   println();
 }
@@ -193,15 +194,15 @@ def testUpTo() = {
 
   // a{..2}
   val R1 = UPTO(CHAR('a'), 2);
-  assertTest(matcher(R1, ""), true, "a{..2} matches empty string");
-  assertTest(matcher(R1, "a"), true, "a{..2} matches a");
-  assertTest(matcher(R1, "aa"), true, "a{..2} matches aa");
+  assertTest(matcher(R1, ""),    true,  "a{..2} matches empty string");
+  assertTest(matcher(R1, "a"),   true,  "a{..2} matches a");
+  assertTest(matcher(R1, "aa"),  true,  "a{..2} matches aa");
   assertTest(matcher(R1, "aaa"), false, "a{..2} doesn't match aaa");
 
   // ab{..3}c
   val R2 = SEQ(CHAR('a'), SEQ(UPTO(CHAR('b'), 3), CHAR('c')));
-  assertTest(matcher(R2, "ac"), true, "ab{..3}c matches ac");
-  assertTest(matcher(R2, "abbc"), true, "ab{..3}c matches abbc");
+  assertTest(matcher(R2, "ac"),     true,  "ab{..3}c matches ac");
+  assertTest(matcher(R2, "abbc"),   true,  "ab{..3}c matches abbc");
   assertTest(matcher(R2, "abbbbc"), false, "ab{..3}c doesn't match abbbbc");
 
   println();
@@ -214,17 +215,17 @@ def testFrom() = {
 
   // a{2..}
   val R1 = FROM(CHAR('a'), 2);
-  assertTest(matcher(R1, "aa"), true, "a{2..} matches aa");
-  assertTest(matcher(R1, "aaa"), true, "a{2..} matches aaa");
-  assertTest(matcher(R1, "a"), false, "a{2..} doesn't match a");
-  assertTest(matcher(R1, ""), false, "a{2..} doesn't match empty string");
+  assertTest(matcher(R1, "aa"),  true,  "a{2..} matches aa");
+  assertTest(matcher(R1, "aaa"), true,  "a{2..} matches aaa");
+  assertTest(matcher(R1, "a"),   false, "a{2..} doesn't match a");
+  assertTest(matcher(R1, ""),    false, "a{2..} doesn't match empty string");
 
   // ab{3..}c
   val R2 = SEQ(CHAR('a'), SEQ(FROM(CHAR('b'), 3), CHAR('c')));
-  assertTest(matcher(R2, "abbbc"), true, "ab{3..}c matches abbbc");
-  assertTest(matcher(R2, "abbbbc"), true, "ab{..3}c matches abbbbc");
-  assertTest(matcher(R2, "abc"), false, "ab{3..}c doesn't match abc");
-  assertTest(matcher(R2, "ac"), false, "ab{3..}c doesn't match ac");
+  assertTest(matcher(R2, "abbbc"),  true,  "ab{3..}c matches abbbc");
+  assertTest(matcher(R2, "abbbbc"), true,  "ab{..3}c matches abbbbc");
+  assertTest(matcher(R2, "abc"),    false, "ab{3..}c doesn't match abc");
+  assertTest(matcher(R2, "ac"),     false, "ab{3..}c doesn't match ac");
 
   println();
 }
@@ -236,12 +237,12 @@ def testBetween() = {
 
   // a{3, 6}
   val R1 = BETWEEN(CHAR('a'), 3, 6);
-  assertTest(matcher(R1, "aaa"), true, "a{3, 6} matches aaa");
-  assertTest(matcher(R1, "aaaaaa"), true, "a{3, 6} matches aaaaaa");
-  assertTest(matcher(R1, "aaaa"), true, "a{3, 6} matches aaaa");
-  assertTest(matcher(R1, "a"), false, "a{3, 6} doesn't match a");
+  assertTest(matcher(R1, "aaa"),     true,  "a{3, 6} matches aaa");
+  assertTest(matcher(R1, "aaaaaa"),  true,  "a{3, 6} matches aaaaaa");
+  assertTest(matcher(R1, "aaaa"),    true,  "a{3, 6} matches aaaa");
+  assertTest(matcher(R1, "a"),       false, "a{3, 6} doesn't match a");
   assertTest(matcher(R1, "aaaaaaa"), false, "a{3, 6} doesn't match aaaaaaa");
-  assertTest(matcher(R1, "aaaab"), false, "a{3, 6} doesn't match aaaab");
+  assertTest(matcher(R1, "aaaab"),   false, "a{3, 6} doesn't match aaaab");
 
   println();
 }
@@ -253,16 +254,16 @@ def testPlus() = {
 
   // a+
   val R1 = PLUS(CHAR('a'));
-  assertTest(matcher(R1, "a"), true, "a+ matches a");
-  assertTest(matcher(R1, "aaaa"), true, "a+ matches aaaa");
-  assertTest(matcher(R1, ""), false, "a+ doesn't match empty string");
-  assertTest(matcher(R1, "ba"), false, "a+ doesn't match ba");
+  assertTest(matcher(R1, "a"),    true,  "a+ matches a");
+  assertTest(matcher(R1, "aaaa"), true,  "a+ matches aaaa");
+  assertTest(matcher(R1, ""),     false, "a+ doesn't match empty string");
+  assertTest(matcher(R1, "ba"),   false, "a+ doesn't match ba");
 
   // a+b+
   val R2 = SEQ(PLUS(CHAR('a')), PLUS(CHAR('b')));
-  assertTest(matcher(R2, "ab"), true, "a+b+ matches ab");
-  assertTest(matcher(R2, "aaabb"), true, "a+b+ matches aaabb");
-  assertTest(matcher(R2, "aaa"), false, "a+b+ doesn't match aaa");
+  assertTest(matcher(R2, "ab"),    true,  "a+b+ matches ab");
+  assertTest(matcher(R2, "aaabb"), true,  "a+b+ matches aaabb");
+  assertTest(matcher(R2, "aaa"),   false, "a+b+ doesn't match aaa");
 
   println();
 }
@@ -274,16 +275,16 @@ def testOptional() = {
 
   // a?
   val R1 = OPTIONAL(CHAR('a'));
-  assertTest(matcher(R1, "a"), true, "a? matches a");
-  assertTest(matcher(R1, ""), true, "a? matches empty string");
+  assertTest(matcher(R1, "a"),  true,  "a? matches a");
+  assertTest(matcher(R1, ""),   true,  "a? matches empty string");
   assertTest(matcher(R1, "ab"), false, "a? doesn't match ab");
 
   // a?cb?
   val R2 = SEQ(OPTIONAL(CHAR('a')), SEQ(CHAR('c'), OPTIONAL(CHAR('b'))));
-  assertTest(matcher(R2, "acb"), true, "a?cb? matches acb");
-  assertTest(matcher(R2, "c"), true, "a?cb? matches c");
+  assertTest(matcher(R2, "acb"),  true,  "a?cb? matches acb");
+  assertTest(matcher(R2, "c"),    true,  "a?cb? matches c");
   assertTest(matcher(R2, "aacb"), false, "a?cb? doesn't match aacb");
-  assertTest(matcher(R2, "ab"), false, "a?cb? doesn't match ab");
+  assertTest(matcher(R2, "ab"),   false, "a?cb? doesn't match ab");
 
   println();
 }
@@ -295,12 +296,12 @@ def testNTimes() = {
 
   // a{5}
   val R1 = NTIMES(CHAR('a'), 5);
-  assertTest(matcher(R1, "aaaaa"), true, "a{5} matches aaaaa");
-  assertTest(matcher(R1, "aaaa"), false, "a{5} doesn't match aaaa");
+  assertTest(matcher(R1, "aaaaa"), true,  "a{5} matches aaaaa");
+  assertTest(matcher(R1, "aaaa"),  false, "a{5} doesn't match aaaa");
 
   // ab{2}c{3}
   val R2 = SEQ(CHAR('a'), SEQ(NTIMES(CHAR('b'), 2), NTIMES(CHAR('c'), 3)));
-  assertTest(matcher(R2, "abbccc"), true, "ab{2}c{3} matches abbccc");
+  assertTest(matcher(R2, "abbccc"), true,  "ab{2}c{3} matches abbccc");
   assertTest(matcher(R2, "aabbcc"), false, "ab{2}c{3} doesn't match aabbcc");
 
   println();
@@ -313,10 +314,10 @@ def testNot() = {
 
   // ~a
   val R1 = NOT(CHAR('a'));
-  assertTest(matcher(R1, "b"), true, "~a matches b");
-  assertTest(matcher(R1, "ab"), true, "~a matches ab");
-  assertTest(matcher(R1, "aaa"), true, "~a matches aaa");
-  assertTest(matcher(R1, "a"), false, "~a doesn't match a");
+  assertTest(matcher(R1, "b"),   true,  "~a matches b");
+  assertTest(matcher(R1, "ab"),  true,  "~a matches ab");
+  assertTest(matcher(R1, "aaa"), true,  "~a matches aaa");
+  assertTest(matcher(R1, "a"),   false, "~a doesn't match a");
 
 
   println();
@@ -329,15 +330,15 @@ def testCustomInfix() = {
 
   // abc ("'a' o 'b' o 'c'")
   val R1 = CHAR('a') o CHAR('b') o CHAR('c');
-  assertTest(matcher(R1, "abc"), true, "[SEQ = o]: a.b.c matches abc");
+  assertTest(matcher(R1, "abc"),  true,  "[SEQ = o]: a.b.c matches abc");
   assertTest(matcher(R1, "abcd"), false, "[SEQ = o]: a.b.c doesn't match abcd");
 
   // a+b+c ("'a' + 'b' + 'c'")
   val R2 = CHAR('a') + CHAR('b') + CHAR('c');
-  assertTest(matcher(R2, "a"), true, "[ALT = +]: a+b+c matches a");
-  assertTest(matcher(R2, "b"), true, "[ALT = +]: a+b+c matches b");
+  assertTest(matcher(R2, "a"),  true,  "[ALT = +]: a+b+c matches a");
+  assertTest(matcher(R2, "b"),  true,  "[ALT = +]: a+b+c matches b");
   assertTest(matcher(R2, "ab"), false, "[ALT = +]: a+b+c doesn't match ab");
-  assertTest(matcher(R2, "d"), false, "[ALT = +]: a+b+c doesn't match d");
+  assertTest(matcher(R2, "d"),  false, "[ALT = +]: a+b+c doesn't match d");
 
   println();
 }
@@ -393,25 +394,25 @@ def question4() = {
     // char
     println("\nTesting _CHAR (c):");
     val R1 = CFUN(_CHAR('a'));
-    assertTest(matcher(R1, "a"), true, "CFUN: a matches a");
-    assertTest(matcher(R1, "b"), false, "CFUN: a doesn't match b");
+    assertTest(matcher(R1, "a"),  true,  "CFUN: a matches a");
+    assertTest(matcher(R1, "b"),  false, "CFUN: a doesn't match b");
     assertTest(matcher(R1, "aa"), false, "CFUN: a doesn't match aa");
-    assertTest(matcher(R1, ""), false, "CFUN: a doesn't match empty string");
+    assertTest(matcher(R1, ""),   false, "CFUN: a doesn't match empty string");
 
     // range
     println("\nTesting _RANGE ([abc]):");
     val R2 = CFUN(_RANGE(Set('a','b','c', 'd')));
-    assertTest(matcher(R2, "a"), true, "CFUN: [a,b,c,d] matches a");
-    assertTest(matcher(R2, "b"), true, "CFUN: [a,b,c,d] matches b");
+    assertTest(matcher(R2, "a"),  true,  "CFUN: [a,b,c,d] matches a");
+    assertTest(matcher(R2, "b"),  true,  "CFUN: [a,b,c,d] matches b");
     assertTest(matcher(R2, "ab"), false, "CFUN: [a,b,c,d] doesn't match ab");
-    assertTest(matcher(R2, ""), false, "CFUN: [a,b,c,d] doesn't match empty string");
+    assertTest(matcher(R2, ""),   false, "CFUN: [a,b,c,d] doesn't match empty string");
 
     // all
     println("\nTesting _ALL (.):");
     val R3 = CFUN(_ALL);
-    assertTest(matcher(R3, "a"), true, "CFUN: . matches a");
-    assertTest(matcher(R3, "b"), true, "CFUN: . matches a");
-    assertTest(matcher(R3, "c"), true, "CFUN: . matches a");
+    assertTest(matcher(R3, "a"),  true,  "CFUN: . matches a");
+    assertTest(matcher(R3, "b"),  true,  "CFUN: . matches a");
+    assertTest(matcher(R3, "c"),  true,  "CFUN: . matches a");
     assertTest(matcher(R3, "ab"), false, "CFUN: . doesn't match ab");
 
     // with other operators
@@ -458,7 +459,7 @@ def question5() = {
 def question6() = {
     println("Question 6:\n");
 
-    // \/\*(~(.*\*\/.*))\*\/
+    // Expression: \/\*(~(.*\*\/.*))\*\/
     val R1 = CFUN(_CHAR('/')) o CFUN(_CHAR('*')) o (NOT(STAR(CFUN(_ALL)) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')) o STAR(CFUN(_ALL) )) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')));
 
     println("Testing \\/\\*(~(.*\\*\\/.*))\\*\\/ matches:");
@@ -479,20 +480,20 @@ def question7() = {
     val R1 = CFUN(_CHAR('a')) o CFUN(_CHAR('a')) o CFUN(_CHAR('a'));;
     val R2 = (BETWEEN(CFUN(_CHAR('a')), 19, 19)) o (OPTIONAL(CFUN(_CHAR('a'))))
 
-    val five = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    val six = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    val five  = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    val six   = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     val seven = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
     val R1PlusPlus = PLUS(PLUS(R1));
     val R2PlusPlus = PLUS(PLUS(R2));
 
-    assertTest(matcher(R1PlusPlus, five), true,   "(R1+)+ match 5 = MATCH"); // yes
-    assertTest(matcher(R1PlusPlus, six), false,   "(R1+)+ match 6 = FAIL");  // no
+    assertTest(matcher(R1PlusPlus, five),  true,  "(R1+)+ match 5 = MATCH"); // yes
+    assertTest(matcher(R1PlusPlus, six),   false, "(R1+)+ match 6 = FAIL");  // no
     assertTest(matcher(R1PlusPlus, seven), false, "(R1+)+ match 7 = FAIL");  // no
 
-    assertTest(matcher(R2PlusPlus, five), true,  "(R2+)+ match 5 = MATCH"); // yes
-    assertTest(matcher(R2PlusPlus, six), false,  "(R2+)+ match 6 = FAIL");  // no
-    assertTest(matcher(R2PlusPlus, seven), true, "(R2+)+ match 7 = MATCH"); // yes
+    assertTest(matcher(R2PlusPlus, five),  true,  "(R2+)+ match 5 = MATCH"); // yes
+    assertTest(matcher(R2PlusPlus, six),   false, "(R2+)+ match 6 = FAIL");  // no
+    assertTest(matcher(R2PlusPlus, seven), true,  "(R2+)+ match 7 = MATCH"); // yes
 
     println("\nDone!")
     println();
@@ -503,7 +504,9 @@ def question7() = {
 @doc("All tests.")
 @main
 def all() = {
+  // UNIT TESTS -
   println("Unit Tests:");
+  // regex classes:
   testRange();
   testFrom();
   testBetween();
@@ -512,9 +515,11 @@ def all() = {
   testOptional();
   testNTimes();
   testNot();
-  testCustomInfix(); // custom infix operators (RexpOps class)
-  println("Done :)");
-  println();
+  // custom infix operators (RexpOps class):
+  testCustomInfix();
+  println("Done :)\n");
+
+  // COURSEWORK QUESTIONS -
   println("Coursework Questions:\n");
   question3();
   question4();
