@@ -3,8 +3,6 @@
 //  or
 //    amm re3.sc all
 
-// TODO: look at https://www.ccs.neu.edu/home/turon/re-deriv.pdf
-
 // ===== CLASS DEFINITIONS =====
 
 abstract class Rexp
@@ -76,16 +74,14 @@ def der(c: Char, r: Rexp): Rexp =
     case SEQ(r1, r2) =>
       if (nullable(r1)) ALT(SEQ(der(c, r1), r2), der(c, r2))
       else SEQ(der(c, r1), r2)
-    case STAR(r) => SEQ(der(c, r), STAR(r))
+    case STAR(r)     => SEQ(der(c, r), STAR(r))
 
     // === Extended Cases ===
     case NTIMES(r, n) =>
       if (n == 0) ZERO
       else SEQ(der(c, r), NTIMES(r, n - 1))
 
-    case PLUS(r) =>
-      SEQ(der(c, r), STAR(r)) // one of r matches, followed by zero-or-more of r
-    // TODO - is this allowed?
+    case PLUS(r) => SEQ(der(c, r), STAR(r))
 
     case OPTIONAL(r) => der(c, r)
 
@@ -100,8 +96,7 @@ def der(c: Char, r: Rexp): Rexp =
       else SEQ(der(c, r), UPTO(r, m - 1))
 
     case FROM(r, n) =>
-      if (n == 0)
-        SEQ(der(c, r), FROM(r, n)) // TODO - can also use STAR instead of FROM
+      if (n == 0) SEQ(der(c, r), STAR(r))
       else SEQ(der(c, r), FROM(r, n - 1))
 
     case RANGE(chars) => if (chars.contains(c)) ONE else ZERO
@@ -499,14 +494,14 @@ def question7() = {
     println();
 }
 
+
+
 // ==== RUN ALL: ======
 
-@doc("All tests.")
+@doc("Unit tests.")
 @main
-def all() = {
-  // UNIT TESTS -
-  println("Unit Tests:");
-  // regex classes:
+def unitTests() = {
+  // test regex classes
   testRange();
   testFrom();
   testBetween();
@@ -515,17 +510,30 @@ def all() = {
   testOptional();
   testNTimes();
   testNot();
-  // custom infix operators (RexpOps class):
   testCustomInfix();
-  println("Done :)\n");
+}
 
-  // COURSEWORK QUESTIONS -
-  println("Coursework Questions:\n");
+@doc("Coursework Questions.")
+@main
+def courseworkQuestions() = {
   question3();
   question4();
   question5();
   question6();
   question7();
+}
+
+@doc("All tests.")
+@main
+def all() = {
+  // UNIT TESTS -
+  println("Unit Tests:");
+  unitTests();
+  println("Done :)\n");
+
+  // COURSEWORK QUESTIONS -
+  println("Coursework Questions:\n");
+  courseworkQuestions();
 }
 
 // ==============================
