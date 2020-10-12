@@ -476,8 +476,8 @@ def question6() = {
 def question7() = {
     println("Question 7:\n");
 
-    val R1 = CFUN(_CHAR('A')) o CFUN(_CHAR('A')) o CFUN(_CHAR('A'));
-    val R2 = (BETWEEN(CFUN(_CHAR('A')), 19, 19)) o (OPTIONAL(CFUN(_CHAR('A'))))
+    val R1 = CFUN(_CHAR('a')) o CFUN(_CHAR('a')) o CFUN(_CHAR('a'));;
+    val R2 = (BETWEEN(CFUN(_CHAR('a')), 19, 19)) o (OPTIONAL(CFUN(_CHAR('a'))))
 
     val five = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     val six = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -486,13 +486,13 @@ def question7() = {
     val R1PlusPlus = PLUS(PLUS(R1));
     val R2PlusPlus = PLUS(PLUS(R2));
 
-    assertTest(matcher(R1PlusPlus, five), true, "(R1+)+ match 5");
-    assertTest(matcher(R1PlusPlus, six), true, "(R1+)+ match 6");
-    assertTest(matcher(R1PlusPlus, seven), true, "(R1+)+ match 7");
+    assertTest(matcher(R1PlusPlus, five), true,   "(R1+)+ match 5 = MATCH"); // yes
+    assertTest(matcher(R1PlusPlus, six), false,   "(R1+)+ match 6 = FAIL");  // no
+    assertTest(matcher(R1PlusPlus, seven), false, "(R1+)+ match 7 = FAIL");  // no
 
-    assertTest(matcher(R2PlusPlus, five), true, "(R2+)+ match 5");
-    assertTest(matcher(R2PlusPlus, six), true, "(R2+)+ match 6");
-    assertTest(matcher(R2PlusPlus, seven), true, "(R2+)+ match 7");
+    assertTest(matcher(R2PlusPlus, five), true,  "(R2+)+ match 5 = MATCH"); // yes
+    assertTest(matcher(R2PlusPlus, six), false,  "(R2+)+ match 6 = FAIL");  // no
+    assertTest(matcher(R2PlusPlus, seven), true, "(R2+)+ match 7 = MATCH"); // yes
 
     println("\nDone!")
     println();
