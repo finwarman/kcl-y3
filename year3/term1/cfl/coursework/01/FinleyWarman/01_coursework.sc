@@ -88,7 +88,7 @@ def der(c: Char, r: Rexp): Rexp =
     case BETWEEN(r, n, m) =>
       if (n == 0) {
         if (m == 0) ZERO
-        else SEQ(der(c, r), BETWEEN(r, n, m - 1))
+        else SEQ(der(c, r), UPTO(r, m - 1))
       } else SEQ(der(c, r), BETWEEN(r, n - 1, m - 1))
 
     case UPTO(r, m) =>
@@ -493,8 +493,6 @@ def question7() = {
     println("\nDone!")
     println();
 }
-
-
 
 // ==== RUN ALL: ======
 
