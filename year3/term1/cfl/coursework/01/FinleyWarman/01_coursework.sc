@@ -461,30 +461,22 @@ def question5() = {
     val lower = ('a' to 'z').toSet; // [a-z]
     val digits = ('0' to '9').toSet; // [0-9]
 
-    // Using CFUN (not pretty-printable):
-    // val R_NAME = PLUS(CFUN(_RANGE(lower ++ digits + '_' + '.' + '-'))); // [a-z0-9_.-]+
-    // val R_DOMAIN = PLUS(CFUN(_RANGE(lower ++ digits + '.' + '-'))); // [a-z0-9.-]+
-    // val R_TLD = BETWEEN(CFUN(_RANGE(lower + '.')), 2, 6); // [a-z.]{2,6}
-
     val R_NAME = PLUS(RANGE(lower ++ digits + '_' + '.' + '-')); // [a-z0-9_.-]+
     val R_DOMAIN = PLUS(RANGE(lower ++ digits + '.' + '-')); // [a-z0-9.-]+
     val R_TLD = BETWEEN(RANGE(lower + '.'), 2, 6); // [a-z.]{2,6}
 
-
     // ([a-z0-9_.-]+)@([a-z0-9.-]+).([a-z.]{2,6})
-    // Using CFUN (not pretty-printable):
-    // val R_EMAIL = SEQ(R_NAME, SEQ(CFUN(_CHAR('@')), SEQ(R_DOMAIN, SEQ(CFUN(_CHAR('.')),R_TLD))));
     val R_EMAIL = SEQ(R_NAME, SEQ(CHAR('@'), SEQ(R_DOMAIN, SEQ(CHAR('.'),R_TLD))));
 
     val matches_email = matcher(R_EMAIL, "finley.warman@kcl.ac.uk");
     val der_wrt_email = ders("finley.warman@kcl.ac.uk".toList, R_EMAIL);
 
-    assertTest(matches_email, true, "My email address matches the regular expression");
+    assertTest(matches_email, true, "My 'finley.warman@kcl.ac.uk' matches the email rexp");
 
     println("\nEmail Rexp:")
     prettyPrint(R_EMAIL);
-    println("\nDerivate of email rexp w.r.t. my email address:");
-    prettyPrint(der_wrt_email); // TODO - fix the use of 'star' above in plus
+    println("\nDerivate of email rexp w.r.t. 'finley.warman@kcl.ac.uk':");
+    prettyPrint(der_wrt_email);
 
     println("\nDone!")
     println();
