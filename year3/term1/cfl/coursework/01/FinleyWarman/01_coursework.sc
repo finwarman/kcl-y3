@@ -1,3 +1,4 @@
+import java.{util => ju}
 //  Run Tests:
 //    amm 01_coursework.sc test{x}
 //  or
@@ -422,6 +423,34 @@ def question4() = {
     println();
 }
 
+// pretty printing for regular expressions
+def ppbrackets(r: Rexp) : String = {val ppr=pp(r);(if (ppr.length > 1 && ppr.takeRight(1) != "]") ("(" + pp(r) + ")") else pp(r))}
+def ppsimplifyrange(chars: Set[Char]) : String = {
+    val sortedstr = (collection.immutable.SortedSet[Char]() ++ chars).mkString("");
+    val zeronine  = sortedstr.replaceAll((0 to 9).mkString(""),     "0-9");
+    val alphalow  = zeronine.replaceAll(('a' to 'z').mkString(""),  "a-z");
+    val alphahi   = alphalow.replaceAll(('A' to 'Z').mkString(""),  "A-Z");
+    "[" + alphahi + "]"
+}
+def pp(r: Rexp) : String = r match {
+  case ZERO             => Console.BOLD + "0" + Console.RESET
+  case ONE              => Console.BOLD + "1" + Console.RESET
+  case CHAR(c)          => c.toString
+  case ALT(r1, r2)      => "(" + pp(r1) + " + " + pp(r2) + ")"
+  case SEQ(r1, r2)      => "(" + pp(r1) + " • " + pp(r2) + ")"
+  case STAR(r)          => ppbrackets(r) + "*"
+  case NTIMES(r, n)     => ppbrackets(r) + "{" + n.toString() + "}"
+  case PLUS(r)          => ppbrackets(r) + "*"
+  case OPTIONAL(r)      => ppbrackets(r) + "?"
+  case UPTO(r, m)       => ppbrackets(r) + "{.." + m.toString() + "}"
+  case FROM(r, n)       => ppbrackets(r) + "{" + n.toString() + "..}"
+  case BETWEEN(r, n, m) => ppbrackets(r) + "{" + n.toString() + ".." + m.toString() + "}"
+  case RANGE(chars)     => ppsimplifyrange(chars)
+  case NOT(r)           => "~" + ppbrackets(r)
+  case CFUN(f)          => "CFUN(_lambda_)" // anonymous
+}
+def prettyPrint(r: Rexp) = {println(pp(r))}
+
 @doc("Question 5 - Email")
 @main
 def question5() = {
@@ -430,20 +459,30 @@ def question5() = {
     val lower = ('a' to 'z').toSet; // [a-z]
     val digits = ('0' to '9').toSet; // [0-9]
 
-    val R_NAME = PLUS(CFUN(_RANGE(lower ++ digits + '_' + '.' + '-'))); // [a-z0-9_.-]+
-    val R_DOMAIN = PLUS(CFUN(_RANGE(lower ++ digits + '.' + '-'))); // [a-z0-9.-]+
-    val R_TLD = BETWEEN(CFUN(_RANGE(lower + '.')), 2, 6); // [a-z.]{2,6}
+    // Using CFUN (not pretty-printable):
+    // val R_NAME = PLUS(CFUN(_RANGE(lower ++ digits + '_' + '.' + '-'))); // [a-z0-9_.-]+
+    // val R_DOMAIN = PLUS(CFUN(_RANGE(lower ++ digits + '.' + '-'))); // [a-z0-9.-]+
+    // val R_TLD = BETWEEN(CFUN(_RANGE(lower + '.')), 2, 6); // [a-z.]{2,6}
+
+    val R_NAME = PLUS(RANGE(lower ++ digits + '_' + '.' + '-')); // [a-z0-9_.-]+
+    val R_DOMAIN = PLUS(RANGE(lower ++ digits + '.' + '-')); // [a-z0-9.-]+
+    val R_TLD = BETWEEN(RANGE(lower + '.'), 2, 6); // [a-z.]{2,6}
+
 
     // ([a-z0-9_.-]+)@([a-z0-9.-]+).([a-z.]{2,6})
-    val R_EMAIL = SEQ(R_NAME, SEQ(CFUN(_CHAR('@')), SEQ(R_DOMAIN, SEQ(CFUN(_CHAR('.')),R_TLD))));
+    // Using CFUN (not pretty-printable):
+    // val R_EMAIL = SEQ(R_NAME, SEQ(CFUN(_CHAR('@')), SEQ(R_DOMAIN, SEQ(CFUN(_CHAR('.')),R_TLD))));
+    val R_EMAIL = SEQ(R_NAME, SEQ(CHAR('@'), SEQ(R_DOMAIN, SEQ(CHAR('.'),R_TLD))));
 
     val matches_email = matcher(R_EMAIL, "finley.warman@kcl.ac.uk");
     val der_wrt_email = ders("finley.warman@kcl.ac.uk".toList, R_EMAIL);
 
-    assertTest(matches_email, true, "My email matches the regular expression");
+    assertTest(matches_email, true, "My email address matches the regular expression");
 
-    println("TODO!");
-    println(der_wrt_email); // TODO - fix the use of 'star' above in plus
+    println("\nEmail Rexp:")
+    prettyPrint(R_EMAIL);
+    println("\nDerivate of email rexp w.r.t. my email address:");
+    prettyPrint(der_wrt_email); // TODO - fix the use of 'star' above in plus
 
     println("\nDone!")
     println();
