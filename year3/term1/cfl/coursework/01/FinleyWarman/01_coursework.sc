@@ -144,9 +144,37 @@ def matcher(r: Rexp, s: String): Boolean =
 
 // ==============================
 
-// ===== TESTS =====
+// ===== HELPER FUNCTIONS =====
 
-// Helper function to pretty-print test results
+// pretty printing for regular expressions
+def prettyPrint(r: Rexp) = {println(pp(r))}
+def ppbrackets(r: Rexp) : String = {val ppr=pp(r);(if (ppr.length > 1 && ppr.takeRight(1) != "]") ("(" + pp(r) + ")") else pp(r))}
+def ppsimplifyrange(chars: Set[Char]) : String = {
+    val sortedstr = (collection.immutable.SortedSet[Char]() ++ chars).mkString("");
+    val zeronine  = sortedstr.replaceAll((0 to 9).mkString(""),     "0-9");
+    val alphalow  = zeronine.replaceAll(('a' to 'z').mkString(""),  "a-z");
+    val alphahi   = alphalow.replaceAll(('A' to 'Z').mkString(""),  "A-Z");
+    "[" + alphahi + "]"
+}
+def pp(r: Rexp) : String = r match {
+  case ZERO             => Console.BOLD + "0" + Console.RESET
+  case ONE              => Console.BOLD + "1" + Console.RESET
+  case CHAR(c)          => c.toString
+  case ALT(r1, r2)      => "(" + pp(r1) + " + " + pp(r2) + ")"
+  case SEQ(r1, r2)      => "(" + pp(r1) + " • " + pp(r2) + ")"
+  case STAR(r)          => ppbrackets(r) + "*"
+  case NTIMES(r, n)     => ppbrackets(r) + "{" + n.toString() + "}"
+  case PLUS(r)          => ppbrackets(r) + "+"
+  case OPTIONAL(r)      => ppbrackets(r) + "?"
+  case UPTO(r, m)       => ppbrackets(r) + "{.." + m.toString() + "}"
+  case FROM(r, n)       => ppbrackets(r) + "{" + n.toString() + "..}"
+  case BETWEEN(r, n, m) => ppbrackets(r) + "{" + n.toString() + ".." + m.toString() + "}"
+  case RANGE(chars)     => ppsimplifyrange(chars)
+  case NOT(r)           => "~" + ppbrackets(r)
+  case CFUN(f)          => "CFUN(_lambda_)" // anonymous
+}
+
+// pretty-print test results
 def assertTest(result: Any, expected: Any, testName: String) = {
   print(("Testing '" + testName + "'...").padTo(56, ' '));
   try {
@@ -161,6 +189,8 @@ def assertTest(result: Any, expected: Any, testName: String) = {
   }
   print(Console.WHITE);
 }
+
+// ===== TESTS =====
 
 @doc("RANGE")
 @main
@@ -422,34 +452,6 @@ def question4() = {
     println("\nDone!")
     println();
 }
-
-// pretty printing for regular expressions
-def ppbrackets(r: Rexp) : String = {val ppr=pp(r);(if (ppr.length > 1 && ppr.takeRight(1) != "]") ("(" + pp(r) + ")") else pp(r))}
-def ppsimplifyrange(chars: Set[Char]) : String = {
-    val sortedstr = (collection.immutable.SortedSet[Char]() ++ chars).mkString("");
-    val zeronine  = sortedstr.replaceAll((0 to 9).mkString(""),     "0-9");
-    val alphalow  = zeronine.replaceAll(('a' to 'z').mkString(""),  "a-z");
-    val alphahi   = alphalow.replaceAll(('A' to 'Z').mkString(""),  "A-Z");
-    "[" + alphahi + "]"
-}
-def pp(r: Rexp) : String = r match {
-  case ZERO             => Console.BOLD + "0" + Console.RESET
-  case ONE              => Console.BOLD + "1" + Console.RESET
-  case CHAR(c)          => c.toString
-  case ALT(r1, r2)      => "(" + pp(r1) + " + " + pp(r2) + ")"
-  case SEQ(r1, r2)      => "(" + pp(r1) + " • " + pp(r2) + ")"
-  case STAR(r)          => ppbrackets(r) + "*"
-  case NTIMES(r, n)     => ppbrackets(r) + "{" + n.toString() + "}"
-  case PLUS(r)          => ppbrackets(r) + "*"
-  case OPTIONAL(r)      => ppbrackets(r) + "?"
-  case UPTO(r, m)       => ppbrackets(r) + "{.." + m.toString() + "}"
-  case FROM(r, n)       => ppbrackets(r) + "{" + n.toString() + "..}"
-  case BETWEEN(r, n, m) => ppbrackets(r) + "{" + n.toString() + ".." + m.toString() + "}"
-  case RANGE(chars)     => ppsimplifyrange(chars)
-  case NOT(r)           => "~" + ppbrackets(r)
-  case CFUN(f)          => "CFUN(_lambda_)" // anonymous
-}
-def prettyPrint(r: Rexp) = {println(pp(r))}
 
 @doc("Question 5 - Email")
 @main
