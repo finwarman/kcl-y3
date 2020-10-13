@@ -458,10 +458,10 @@ def question6() = {
     val R1 = CFUN(_CHAR('/')) o CFUN(_CHAR('*')) o (NOT(STAR(CFUN(_ALL)) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')) o STAR(CFUN(_ALL) )) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')));
 
     println("Testing \\/\\*(~(.*\\*\\/.*))\\*\\/ matches:");
-    assertTest(matcher(R1, "/**/"), true, "/**/"); // yes
-    assertTest(matcher(R1, "/*foobar*/"), true, "/*foobar*/"); // yes
-    assertTest(matcher(R1, "/*test*/test*/"), false, "/*test*/test*/"); // no
-    assertTest(matcher(R1, "/*test/*test*/"), true, "/*test/*test*/"); // yes
+    assertTest(matcher(R1, "/**/"),           true,  "/**/           MATCHES"); // yes
+    assertTest(matcher(R1, "/*foobar*/"),     true,  "/*foobar*/     MATCHES"); // yes
+    assertTest(matcher(R1, "/*test*/test*/"), false, "/*test*/test*/ DOESN'T MATCH"); // no
+    assertTest(matcher(R1, "/*test/*test*/"), true,  "/*test/*test*/ MATCHES"); // yes
 
     println("\nDone!")
     println();
