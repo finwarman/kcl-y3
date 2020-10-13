@@ -89,7 +89,7 @@ def der(c: Char, r: Rexp): Rexp =
     case BETWEEN(r, n, m) =>
       if (n == 0) {
         if (m == 0) ZERO
-        else SEQ(der(c, r), UPTO(r, m - 1))
+        else SEQ(der(c, r), BETWEEN(r, 0, m - 1))
       } else SEQ(der(c, r), BETWEEN(r, n - 1, m - 1))
 
     case UPTO(r, m) =>
@@ -97,7 +97,7 @@ def der(c: Char, r: Rexp): Rexp =
       else SEQ(der(c, r), UPTO(r, m - 1))
 
     case FROM(r, n) =>
-      if (n == 0) SEQ(der(c, r), STAR(r))
+      if (n == 0) SEQ(der(c, r), FROM(r, 0))
       else SEQ(der(c, r), FROM(r, n - 1))
 
     case RANGE(chars) => if (chars.contains(c)) ONE else ZERO
