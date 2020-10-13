@@ -187,19 +187,36 @@ Q: Definitions for nullable, der, and cfun-related functions.
 A: I implemented CFUN after the initial CHAR implementation, and used \verb|CFUN(_CHAR(c))| at every point after implementing it.\\
 \\
 To run CFUN tests: `\verb|amm 01_coursework.sc question4|' \\
-TODO: list what was added
+This adds \verb|CFUN|:
+\begin{verbatim}
+    case class CFUN(f: Char => Boolean) extends Rexp
+    def nullable ... case CFUN(f) => false
+    der der      ... case CFUN(f) => if (f(c)) ONE else ZERO
+\end{verbatim}
+alongside the following functions for \verb|char, range, all|:
+\begin{verbatim}
+    def _CHAR(ch: Char): Char => Boolean = { (c: Char) => {(ch == c)} }
+    def _RANGE(chars: Set[Char]) : Char => Boolean = { (c: Char) => {chars.contains(c)} }
+    def _ALL() : Char => Boolean = { (c: Char) => true}
+\end{verbatim}
+Example: \verb|SEQ(CFUN(_CHAR('a')), SEQ(CFUN(_RANGE(Set('b', 'B'))), STAR(CFUN(_ALL))))| Matches: $a[bB].*$
 
 \addcontentsline{toc}{section}{Question 5}
 \section*{Question 5}
 Q: Email Address Regular Expressions and Derivative w.r.t. my email.
 \\
 \\
-=[TODO]
+A: (To run: `\verb|amm 01_coursework.sc question5|') \\
+Ders \verb~"finley.warman@kcl.ac.uk" ~$([-.\_0{\text -}9a{\text -}z]^+\cdot(@\cdot([-.0{\text -}9a{\text -}z]^+\cdot(.\cdot[.a{\text -}z]^{\{2..6\}}))))$:
+\[
+    ((([-.0{\text -}9a{\text -}z]^* \cdot (. \cdot [.a{\text -}z]^{\{2..6\}})) + [.a{\text -}z]^{\{0..4\}}) + [.a{\text -}z]^{\{..1\}})
+\]
+This final derivative matches the empty string $\varepsilon$, therefore the Email Rexp matches the input string of my email address.
 
 \addcontentsline{toc}{section}{Question 6}
 \section*{Question 6}
 Q: Determine whether the following match the expression
-$ / \cdot * \cdot (~(ALL^* \cdot * \cdot / \cdot ALL^*)) \cdot * \cdot /$
+$ / \cdot * \cdot (\char`\~(ALL^* \cdot * \cdot / \cdot ALL^*)) \cdot * \cdot /$
 \\
 \\
 A: (To run: `\verb|amm 01_coursework.sc question6|') \\

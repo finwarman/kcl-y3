@@ -471,7 +471,7 @@ def question5() = {
     val matches_email = matcher(R_EMAIL, "finley.warman@kcl.ac.uk");
     val der_wrt_email = ders("finley.warman@kcl.ac.uk".toList, R_EMAIL);
 
-    assertTest(matches_email, true, "My 'finley.warman@kcl.ac.uk' matches the email rexp");
+    assertTest(matches_email, true, "email rexp matches finley.warman@kcl.ac.uk");
 
     println("\nEmail Rexp:")
     prettyPrint(R_EMAIL);
