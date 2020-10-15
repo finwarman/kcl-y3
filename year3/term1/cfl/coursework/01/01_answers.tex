@@ -148,12 +148,14 @@ Q: Definitions for der:
     der c (r?)          == (der c r)
     der c (r\{n\})        == if (n=0) then 0 else ((der c r) . r\{n-1\})
     der c (r\{..m\})      == if (m=0) then 0 else ((der c r) . r\{..m-1\})
-    der c (r\{n..\})      == if (n=0) then ((der c r) . r*) else ((der c r) . r\{n-1..\})
+    der c (r\{n..\})      == if (n=0) then ((der c r) . r\{0..\}) else ((der c r) . r\{n-1..\})
     der c (r\{n..m\})     == if (n=0 and m=0) then 0
-                             elif (n=0) then ((der c r) . r\{..m-1\})
+                             elif (n=0) then ((der c r) . r\{0..m-1\})
                              else ((der c r) . r\{n-1..m-1\})
     der c (~r)          == ~(der c r)
 \end{Verbatim}
+
+(Further transformations are possible, such as \verb~r{0..} -> r*~ and \verb~r{0..m} -> r{..m}~, however these are not implemented in order to keep the recursive definitions simple.)
 
 \mbox{}\\
 
@@ -184,7 +186,7 @@ These tests pass, so the results produced are as I expected!
 Q: Definitions for nullable, der, and cfun-related functions.
 \\
 \\
-A: I implemented CFUN after the initial CHAR implementation, and used \verb|CFUN(_CHAR(c))| at every point after implementing it.\\
+A: I implemented CFUN after the initial CHAR implementation, and used \verb|CFUN(_CHAR(c))|, \verb|CHAR2(c)|, etc. only after implementing them.\\
 \\
 To run CFUN tests: `\verb|amm 01_coursework.sc question4|' \\
 This adds \verb|CFUN|:
@@ -195,11 +197,21 @@ This adds \verb|CFUN|:
 \end{verbatim}
 alongside the following functions for \verb|char, range, all|:
 \begin{verbatim}
-    def _CHAR(ch: Char): Char => Boolean = { (c: Char) => {(ch == c)} }
-    def _RANGE(chars: Set[Char]) : Char => Boolean = { (c: Char) => {chars.contains(c)} }
-    def _ALL() : Char => Boolean = { (c: Char) => true}
+    def _char(ch: Char): Char => Boolean           = { (c: Char) => {(ch == c)} }
+    def _range(chars: Set[Char]) : Char => Boolean = { (c: Char) => {chars.contains(c)} }
+    def _all() : Char => Boolean                   = { (c: Char) => true }
 \end{verbatim}
-Example: \verb|SEQ(CFUN(_CHAR('a')), SEQ(CFUN(_RANGE(Set('b', 'B'))), STAR(CFUN(_ALL))))| Matches: $a[bB].*$
+and these specific instances of CFUN to replace the existing CHAR, RANGE, etc.:
+\begin{verbatim}
+    def CHAR2(c: Char)           = CFUN(_char(c))
+    def RANGE2(chars: Set[Char]) = CFUN(_range(chars))
+    val ALL                      = CFUN(_all())
+\end{verbatim}
+
+\mbox{}\\
+Example: \verb|SEQ(CFUN(_CHAR('a')), SEQ(CFUN(_RANGE(Set('b', 'B'))), STAR(CFUN(_ALL))))|
+matches: $a[bB].*$, as does \verb|CHAR2('a') o RANGE2(Set('b', 'B')) o STAR(ALL)| \\
+\textit{(using custom `o' infix notation for SEQ)}
 
 \addcontentsline{toc}{section}{Question 5}
 \section*{Question 5}
@@ -209,7 +221,7 @@ Q: Email Address Regular Expressions and Derivative w.r.t. my email.
 A: (To run: `\verb|amm 01_coursework.sc question5|') \\
 Ders \verb~"finley.warman@kcl.ac.uk" ~$([-.\_0{\text -}9a{\text -}z]^+\cdot(@\cdot([-.0{\text -}9a{\text -}z]^+\cdot(.\cdot[.a{\text -}z]^{\{2..6\}}))))$:
 \[
-    ((([-.0{\text -}9a{\text -}z]^* \cdot (. \cdot [.a{\text -}z]^{\{2..6\}})) + [.a{\text -}z]^{\{0..4\}}) + [.a{\text -}z]^{\{..1\}})
+    ((([-.0{\text -}9a{\text -}z]^* \cdot (. \cdot [.a{\text -}z]^{\{2..6\}})) + [.a{\text -}z]^{\{0..4\}}) + [.a{\text -}z]^{\{0..1\}})
 \]
 This final derivative matches the empty string $\varepsilon$, therefore the Email Rexp matches the input string of my email address.
 
