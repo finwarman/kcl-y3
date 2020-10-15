@@ -36,14 +36,14 @@ implicit class RexpOps(private val r1: Rexp) extends AnyVal {
 // ====== FUNCTION DEFINITIONS =====
 
 // CFUN related functions:
-def _char(ch: Char): Char => Boolean = { (c: Char) => {(ch == c)} }
+def _char(ch: Char)          : Char => Boolean = { (c: Char) => {(ch == c)} }
 def _range(chars: Set[Char]) : Char => Boolean = { (c: Char) => {chars.contains(c)} }
-def _all() : Char => Boolean = { (c: Char) => true}
+def _all()                   : Char => Boolean = { (c: Char) => true}
 
 // instances of CFUN using the the relevant matching functions
-def CHAR2(c: Char) = CFUN(_char(c))
+def CHAR2(c: Char)           = CFUN(_char(c))
 def RANGE2(chars: Set[Char]) = CFUN(_range(chars))
-val ALL = CFUN(_all())
+val ALL                      = CFUN(_all())
 
 // the nullable function: tests whether the regular
 // expression can recognise the empty string
