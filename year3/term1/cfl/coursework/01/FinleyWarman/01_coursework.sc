@@ -36,9 +36,14 @@ implicit class RexpOps(private val r1: Rexp) extends AnyVal {
 // ====== FUNCTION DEFINITIONS =====
 
 // CFUN related functions:
-def _CHAR(ch: Char): Char => Boolean = { (c: Char) => {(ch == c)} }
-def _RANGE(chars: Set[Char]) : Char => Boolean = { (c: Char) => {chars.contains(c)} }
-def _ALL() : Char => Boolean = { (c: Char) => true}
+def _char(ch: Char): Char => Boolean = { (c: Char) => {(ch == c)} }
+def _range(chars: Set[Char]) : Char => Boolean = { (c: Char) => {chars.contains(c)} }
+def _all() : Char => Boolean = { (c: Char) => true}
+
+// instances of CFUN using the the relevant matching functions
+def CHAR2(c: Char) = CFUN(_char(c))
+def RANGE2(chars: Set[Char]) = CFUN(_range(chars))
+val ALL = CFUN(_all())
 
 // the nullable function: tests whether the regular
 // expression can recognise the empty string
@@ -418,24 +423,24 @@ def question4() = {
     println("Question 4 - CFUN Tests:");
 
     // char
-    println("\nTesting _CHAR (c):");
-    val R1 = CFUN(_CHAR('a'));
+    println("\nTesting _char (c):");
+    val R1 = CFUN(_char('a'));
     assertTest(matcher(R1, "a"),  true,  "CFUN: a matches a");
     assertTest(matcher(R1, "b"),  false, "CFUN: a doesn't match b");
     assertTest(matcher(R1, "aa"), false, "CFUN: a doesn't match aa");
     assertTest(matcher(R1, ""),   false, "CFUN: a doesn't match empty string");
 
     // range
-    println("\nTesting _RANGE ([abc]):");
-    val R2 = CFUN(_RANGE(Set('a','b','c', 'd')));
+    println("\nTesting _range ([abc]):");
+    val R2 = CFUN(_range(Set('a','b','c', 'd')));
     assertTest(matcher(R2, "a"),  true,  "CFUN: [a,b,c,d] matches a");
     assertTest(matcher(R2, "b"),  true,  "CFUN: [a,b,c,d] matches b");
     assertTest(matcher(R2, "ab"), false, "CFUN: [a,b,c,d] doesn't match ab");
     assertTest(matcher(R2, ""),   false, "CFUN: [a,b,c,d] doesn't match empty string");
 
     // all
-    println("\nTesting _ALL (.):");
-    val R3 = CFUN(_ALL);
+    println("\nTesting _all (.):");
+    val R3 = CFUN(_all);
     assertTest(matcher(R3, "a"),  true,  "CFUN: . matches a");
     assertTest(matcher(R3, "b"),  true,  "CFUN: . matches a");
     assertTest(matcher(R3, "c"),  true,  "CFUN: . matches a");
@@ -443,11 +448,20 @@ def question4() = {
 
     // with other operators
     println("\nTesting CFUN with various operators:");
-    assertTest(matcher(PLUS(CFUN(_ALL())), "abcdefg"), true, ".+ matches abcdefg");
-    assertTest(matcher(PLUS(CFUN(_ALL())), ""), false, ".+ doesn't match empty string");
-    assertTest(matcher(NTIMES(CFUN(_RANGE(Set('a','b','c'))), 3), "abc"), true, "[abc]{3} matches abc");
-    assertTest(matcher(NTIMES(CFUN(_RANGE(Set('a','b','c'))), 3), "aaa"), true, "[abc]{3} matches aaa");
-    assertTest(matcher(NTIMES(CFUN(_RANGE(Set('a','b','c'))), 3), "a"), false, "[abc]{3} doesn't match a");
+    assertTest(matcher(PLUS(CFUN(_all())), "abcdefg"), true, ".+ matches abcdefg");
+    assertTest(matcher(PLUS(CFUN(_all())), ""), false, ".+ doesn't match empty string");
+    assertTest(matcher(NTIMES(CFUN(_range(Set('a','b','c'))), 3), "abc"), true, "[abc]{3} matches abc");
+    assertTest(matcher(NTIMES(CFUN(_range(Set('a','b','c'))), 3), "aaa"), true, "[abc]{3} matches aaa");
+    assertTest(matcher(NTIMES(CFUN(_range(Set('a','b','c'))), 3), "a"), false, "[abc]{3} doesn't match a");
+
+    // testing CFUN instances
+    println("\nTesting CFUN instances: (CHAR2, RANGE2, ALL)");
+    assertTest(matcher(ALL, "a"),  true,  "ALL matches a");
+    assertTest(matcher(ALL, ""),  false,  "ALL doesn't match empty string");
+    assertTest(matcher(CHAR2('a'), "a"), true, "CHAR2(a) matches a");
+    assertTest(matcher(CHAR2('a'), "b"), false, "CHAR2(a) doesn't match b");
+    assertTest(matcher(RANGE2(Set('a', 'b')), "a"), true, "RANGE2({a,b}) matches b");
+    assertTest(matcher(RANGE2(Set('a', 'b')), "c"), false, "RANGE2({a,b}) doesn't match c");
 
     println("\nDone!")
     println();
@@ -457,25 +471,38 @@ def question4() = {
 @main
 def question5() = {
     println("Question 5 - Email:\n");
+    val email = "finley.warman@kcl.ac.uk";
 
     val lower = ('a' to 'z').toSet; // [a-z]
     val digits = ('0' to '9').toSet; // [0-9]
 
-    val R_NAME = PLUS(RANGE(lower ++ digits + '_' + '.' + '-')); // [a-z0-9_.-]+
-    val R_DOMAIN = PLUS(RANGE(lower ++ digits + '.' + '-')); // [a-z0-9.-]+
-    val R_TLD = BETWEEN(RANGE(lower + '.'), 2, 6); // [a-z.]{2,6}
+    // (n.b. using non-cfun RANGE and CHAR here for pretty-printing)
+
+    val NAME_RANGE = RANGE(lower ++ digits + '_' + '.' + '-');       // [a-z0-9_.-]
+    val R_NAME     = PLUS(NAME_RANGE);                               // [a-z0-9_.-]+
+
+    val DOM_RANGE  = RANGE(lower ++ digits + '.' + '-');             // [a-z0-9.-]
+    val R_DOMAIN   = PLUS(DOM_RANGE);                                // [a-z0-9.-]+
+
+    val TLD_RANGE  = RANGE(lower + '.');                             // [a-z.]
+    val R_TLD      = BETWEEN(TLD_RANGE, 2, 6);                       // [a-z.]{2,6}
 
     // ([a-z0-9_.-]+)@([a-z0-9.-]+).([a-z.]{2,6})
-    val R_EMAIL = SEQ(R_NAME, SEQ(CHAR('@'), SEQ(R_DOMAIN, SEQ(CHAR('.'),R_TLD))));
+    val R_EMAIL = (R_NAME o (CHAR('@') o (R_DOMAIN o (CHAR('.') o R_TLD))));
 
-    val matches_email = matcher(R_EMAIL, "finley.warman@kcl.ac.uk");
-    val der_wrt_email = ders("finley.warman@kcl.ac.uk".toList, R_EMAIL);
+    val matches_email = matcher(R_EMAIL, email);
+    val der_wrt_email = ders(email.toList, R_EMAIL);
 
-    assertTest(matches_email, true, "email rexp matches finley.warman@kcl.ac.uk");
+    // expected derivate w.r.t finley.warman@kcl.ac.uk
+    val expected_der  = (((STAR(DOM_RANGE) o (CHAR('.') o R_TLD)) + BETWEEN(TLD_RANGE, 0, 4) ) + BETWEEN(TLD_RANGE, 0, 1));
 
+    assertTest(matches_email, true, "email rexp matches " + email);
+    assertTest(der_wrt_email, expected_der, "derivative w.r.t " + email + " as expected");
+
+    // pretty printing regex and derivative!
     println("\nEmail Rexp:")
     prettyPrint(R_EMAIL);
-    println("\nDerivate of email rexp w.r.t. 'finley.warman@kcl.ac.uk':");
+    println("\nDerivate of email rexp w.r.t. '" + email + "':");
     prettyPrint(der_wrt_email);
 
     println("\nDone!")
@@ -488,7 +515,7 @@ def question6() = {
     println("Question 6:\n");
 
     // Expression: \/\*(~(.*\*\/.*))\*\/
-    val R1 = CFUN(_CHAR('/')) o CFUN(_CHAR('*')) o (NOT(STAR(CFUN(_ALL)) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')) o STAR(CFUN(_ALL) )) o CFUN(_CHAR('*')) o CFUN(_CHAR('/')));
+    val R1 = CHAR2('/') o CHAR2('*') o (NOT( STAR(ALL) o CHAR2('*') o CHAR2('/') o STAR(ALL) )) o CHAR2('*') o CHAR2('/');
 
     println("Testing \\/\\*(~(.*\\*\\/.*))\\*\\/ matches:");
     assertTest(matcher(R1, "/**/"),           true,  "/**/           MATCHES"); // yes
@@ -505,8 +532,8 @@ def question6() = {
 def question7() = {
     println("Question 7:\n");
 
-    val R1 = CFUN(_CHAR('a')) o CFUN(_CHAR('a')) o CFUN(_CHAR('a'));;
-    val R2 = (BETWEEN(CFUN(_CHAR('a')), 19, 19)) o (OPTIONAL(CFUN(_CHAR('a'))))
+    val R1 = CHAR2('a') o CHAR2('a') o CHAR2('a');
+    val R2 = (BETWEEN(CHAR2('a'), 19, 19)) o (OPTIONAL(CHAR2('a')));
 
     val five  = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     val six   = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
