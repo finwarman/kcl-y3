@@ -87,7 +87,38 @@ Bob decrypts 2 by reversing the mapping for E1 and observing that c3 points to m
 
 ---
 
-## Part 3 - Characteristics of cryptographic systems &Symmetric-key encryption
+## Part 3 - Characteristics of cryptographic systems & Symmetric-key encryption
+
+### Characteristics of Cryptographic Systems
+
+Characterized by 3 independent dimensions
+
+ 1) _Type of Operations_ used to transform `plaintext -> ciphertext`.
+ 2) _Number of Keys_ used.
+ 3) Way in which _plaintext is processed_.
+
+**1 - Type of Operations to transform**:
+
+All encryption algorithms are based on two general principles:
+
+* **Substitution**: Each element in plaintext is mapped to another element
+* **Transposition**: Elements in plaintext are rearranged
+
+All operations _must be reversible_ - **No information is lost**
+
+Most systems involve multiple stages of substitutions and transpositions - these are referred to as **product systems**.
+
+**2 - Number of Keys Used**:
+
+* **Symmetric, single-key, secret-key, or conventional encryption**: both sender and receiver use the "same" key.
+* **Asymmetric, two-key, or public-key encryption**: sender and receiver use different keys.
+
+**3 - Way in which plaintext is processed**:
+
+* **Block cipher**: processes input one block of elements at a time, produce an output block for each input block.
+* **Stream cipher**: processes input elements continuously, producing output one element at a time, as it goes along.
+
+### Symmetric-Key encryption
 
 ---
 
