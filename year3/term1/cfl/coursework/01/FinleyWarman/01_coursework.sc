@@ -192,7 +192,7 @@ def assertTest(result: Any, expected: Any, testName: String) = {
     }
     case e: Exception => throw e
   }
-  print(Console.WHITE);
+  print(Console.RESET);
 }
 
 // ===== TESTS =====
