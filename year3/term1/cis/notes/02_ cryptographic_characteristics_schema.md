@@ -208,4 +208,34 @@ Building a definition of security -
 2) Define what the adversary needs to do to 'win' - what should the output achieve.
 3) The system is secure if any _efficient_ algorithm wins the game with only _negligible_ probability.
 
+A standard definition (conventional encryption) -
+
+* No input data for adversary
+* Choose plaintext attack of following kind:
+  * Case 0 - when asked to encrypt `m`, oracle returns `Ek(m)` under a fixed key k that is chosen randomly initially.
+  * Case 1 - oracle returns encryption of _totally random message_, independent of `m`.
+
+In case 1, the adversary gets totally useless data. If they cannot distinguish this from correct encryptions then they cannot do any damage in the real world (case 0) either
+
+Unconditional Security -
+
+System is secure even if an attacker has unbounded computing power since the ciphertext provides insufficient information to uniquely determine corresponding plaintext.
+
+(Security measure with _information theory_)
+
+Apart from a one-time pad (OTP), there is no unconditionally secure encryption algorithm.
+
+Because of this, we should strive instead for an algorithm that meets one or both of:
+
+* Cost of breaking cipher exceeds value of encrypted information.
+* Time required to break cipher exceeds useful lifetime of information.
+
+This algorithm is **computationally secure** if either of these is met.
+
+Conditional Security -
+
+(Security measure with _complexity theory_)
+
+System can be broken in principle, but it requires more computing power than an attacker would realistically have.
+
 ---
