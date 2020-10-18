@@ -118,10 +118,94 @@ Most systems involve multiple stages of substitutions and transpositions - these
 * **Block cipher**: processes input one block of elements at a time, produce an output block for each input block.
 * **Stream cipher**: processes input elements continuously, producing output one element at a time, as it goes along.
 
-### Symmetric-Key encryption
+### Symmetric-Key encryption (symmetric cipher model)
+
+An encryption scheme `{Ee | e ∈ K}` and `{Dd | d ∈ K}` is a _symmetric-key_, if for each associated pair `(e,d)` it is computationally 'easy' to determine _d_ knowing only _e_, and vice versa. In practice `e = d`.
+
+This is the most widely used model. Also known as: _secret-key, single-key, one-key, shared-key, conventional encryption_.
+
+Sender and recipient share a common key.
+
+All classical encryption algorithms are symmetric-key (prior to public-key in the 1970s, it was the only type of encryption).
+
+**Requirements for secure use of symmetric encryption**:
+
+1) A strong encryption algorithm
+    * At minimum: an attacker who knows the algorithm should not be able to determine the key or decipher ciphertext even if they can access the ciphertext.
+    * Stronger: an attacker shouldn't be able to discover key or decrypt future messages even if they have access to multiple plaintext and their encrypted ciphertexts.
+2) Sender and receiver must _obtain_ copies of secret key in a secure fashion(e.g. a secure channel) and must _keep_ it secure.
+    * If someone can discover the key and knows the algorithm, they can read all communication.
+
+We don't need to keep the algorithm secret, only the key.
 
 ---
 
 ## Part 4 - Cryptanalysis and brute-force attacks
+
+Typical objective of attacking an encryption system:
+
+* Not simply to recover plaintext of a _single_ ciphertext
+* ...also to recover the key in use, so all future messages are compromised
+
+General Attack Approaches:
+
+1) **Cryptanalysis** - Exploits characteristics of an algorithm to deduce a specific plaintext or the key being used.
+2) **Brute-force attack** - Trying every possible key on a piece of ciphertext until a translation is found. (On average, half of all keys must be tried)
+
+**Brute-force attacks**
+
+These are always possible (if the algorithm is known), since you can simply try every possible key. Doesn't mean that it is feasible to try every combination however.
+
+The cost heavily depends on key size.
+e.g.
+
+```txt
+32 bit key has 2^32 alternative keys (4.3E9) - 2ms at 10^6 decrypts/μs
+128 bit key has 2^128 alternative keys (3.4E38) - 5.4E18 years at 10^6 decrypts/μs
+```
+
+(1 decryption per microsecond is reasonable, 10^6/μs may be possible in the future - DES would no longer be computationally secure!)
+
+Example key sizes:
+
+* DES = 56
+* Triple DES = 168
+* AES >= 128
+
+For substitution codes using 26 characters in a permutation, there are 26! = 4x10^26 possible keys.
+
+**Cryptanalytic attacks**
+
+Always assume that the attackers know the algorithms used!
+(Worst case analysis, and realistic in open systems and standards)
+
+Algorithms should be published anyway, so that their security can be properly evaluated.
+
+Security by _obscurity_ can be very dangerous!
+
+Model of attack -
+
+* Input: Whatever adversary knows from the start (public key, etc.)
+* Oracle: Models information adversary can obtain _during_ an attack. (The type of information characterizes the type of attack)
+* Output: Whatever the adversary wants to compute, e.g. the secret key, some info from plaintext, etc.
+
+Types of attack -
+
+* Ciphertext Only -
+    Given `C1=Ek(M1),...,Cn=Ek(Mn)`, deduce `M1,...,Mn` (or an algorithm to compute `Mn+1` from `Cn+1`)
+* Known Plaintext -
+    Given `M1,C1=Ek(M1),...,Mn,Cn=Ek(Mn)`, inverse key or algorithm to compute `Mn+1` from `Cn+1`.
+* Chosen Plaintext -
+    Same as above, but cryptanalyst may choose any message `M1,...,Mn`
+* Adaptive Chosen Plaintext -
+    Can not only choose plaintext, but modify the plaintext based on encryption results.
+* Chosen Ciphertext -
+    Can choose different ciphertexts to be decrypted and gets access to decrypted plaintext.
+
+Building a definition of security -
+
+1) Specify an oracle (type of attack)
+2) Define what the adversary needs to do to 'win' - what should the output achieve.
+3) The system is secure if any _efficient_ algorithm wins the game with only _negligible_ probability.
 
 ---
