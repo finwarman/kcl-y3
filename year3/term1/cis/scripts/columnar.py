@@ -3,11 +3,11 @@
 import string
 import math
 
-message = "attack postponed until Two AM"
-key = "4312567"
-key = [int(c) for c in key]
+message = "The Enigma cipher machine had the confidence of German forces who depended on its security"
+key = "3571426"
 padding = "X"
 stages = 2
+key = [int(c) for c in key]
 
 def format_pad_message(msg, key, padding):
     message = msg.replace(" ", "").upper()
