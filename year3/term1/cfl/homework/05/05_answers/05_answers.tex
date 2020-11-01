@@ -1,0 +1,241 @@
+% !TeX root = ./05_answers.tex
+
+\documentclass[english]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fvextra} % loads also fancyvrb
+\usepackage{pgfgantt}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{dirtytalk}
+\usepackage{xparse}
+\usepackage{xpatch}
+\usepackage[bottom=1.2in,top=1.2in]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata,positioning}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+
+\DeclareMathVersion{ttmath}
+\DeclareSymbolFont{latinletters}{OT1}{\ttdefault}{m}{n}
+%\SetSymbolFont{latinletters}{ttmath}{OT1}{\ttdefault}{m}{n}
+\SetSymbolFont{letters}{ttmath}{OML}{ccm}{m}{it}
+\SetSymbolFont{symbols}{ttmath}{OMS}{ccsy}{m}{n}
+\SetSymbolFont{largesymbols}{ttmath}{OMX}{ccex}{m}{n}
+
+% https://tex.stackexchange.com/questions/150965/insert-symbols-inside-verbatim-mode-latex/156419
+
+\newcommand{\changeletters}{%
+  \count255=`A
+  \advance\count255 -1
+  \loop\ifnum\count255<`Z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`a
+  \advance\count255 -1
+  \loop\ifnum\count255<`z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`0
+  \advance\count255 -1
+  \loop\ifnum\count255<`9
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+}
+
+\xapptocmd{\ttfamily}{\mathversion{ttmath}\changeletters}{}{}
+
+\setkomafont{disposition}{\normalfont\bfseries}
+\definecolor{light-gray}{gray}{0.95}
+
+\begin{document}
+
+\NewDocumentCommand{\codeword}{v}{%
+\colorbox{light-gray}{\texttt{\textcolor{black}{#1}}}%
+}
+
+% == START: TITLE == %
+
+\subtitle{6CCS3CFL - Compilers \& Formal Languages}
+\title{Homework 5}
+\author{Finley Warman}
+\date{\today}
+
+\maketitle
+
+% == END: TITLE == %
+% == START: CONTENTS == %
+
+\tableofcontents
+\par\noindent\rule{\textwidth}{0.4pt}
+
+% == END: CONTENTS == %
+
+\newpage
+
+% MAIN CONTENT:
+
+\addcontentsline{toc}{section}{Question 1}
+\section*{Question 1}
+Q: How would you show a property $P(r)$ holds for all regular expressions $r$, by structural induction?
+\\
+\\
+A:
+\begin{itemize}
+    \item As a basis, show $P(r)$ holds for all terminal cases, i.e. \verb~ rBase ::= 0 | 1 | c ~.
+    \item Let r1 and r2 be regexes, and suppose P(r1) and P(r2) hold [This is the inductive hypothesis, IH].
+    \item Induction over the remaining cases (which are inductively defined) to show property holds on by applying IH: \\
+        \verb~ rInd ::== r1+r2 | r1.r2 | r* ~.
+    \item Thus all cases are covered, which is sufficient to prove a property by structural induction.
+\end{itemize}
+
+\addcontentsline{toc}{section}{Question 2}
+\section*{Question 2}
+Q: Define a regular expression, $ALL$, that can match every string. \\
+Write this in terms of \verb~ r ::= 0 | 1 | c | r1+r2 | r1.r2 | r* | ~r ~
+\\
+A: \verb| ALL = ~(0)|
+
+\addcontentsline{toc}{section}{Question 3}
+\section*{Question 3}
+Q: Define the expressions $r^+$, $r^?$, $r^{\{n\}}$, $r^{\{m,n\}}$ in terms of basic regular expressions. \\
+
+A: \begin{itemize}
+    \item $r^+$ = r . r*
+    \item $r^?$ = \textbf{1} + r
+    \item $r^{\{n\}}$ = $r_1$ . $r_2$ . \dotso . $r_n$
+    \item $r^{\{m,n\}}$ = ($r_1$ . $r_2$ . \dotso . $r_m$) . ( 1 + ($r_{m+1}$) + ($r_{m+1}$ . $r_{m+2}$) + ($r_{m+1}$ . \dotso . $r_{n}$) )
+    \item (where $r_i = r$ for all $i$)
+\end{itemize}
+
+\addcontentsline{toc}{section}{Question 4}
+\section*{Question 4}
+Q: Given the regular expressions for lexing a language with identifiers, parenths, numbers (postive/negative), and operators \verb~+, -, *~: \\
+\\
+\newpage
+A:
+\begin{verbatim}
+  DIGIT       = RANGE("0123456789")
+  START_DIGIT = RANGE("123456789")
+  NUMBER      = OPT(CHAR('-')) . (DIGIT + (START_DIGIT . DIGIT*))
+                    [Numbers are implicitly positive, or explicitly negative]
+
+  LPAREN      = CHAR('(')
+  RPAREN      = CHAR(')')
+
+  OPERATOR    = CHAR('+') + CHAR('-') + CHAR('*')
+
+  LOWERCASE   = RANGE("abcdefghijklmnopqrstuvwxyz")
+  ID          = LOWERCASE . LOWERCASE*
+
+  LANG        = ("num":NUMBER) + ("op":OPERATOR) + ("lp":LPAREN)
+                     + ("rp":RPAREN) + ("id":ID)
+
+\end{verbatim}
+
+\begin{itemize}
+  \item \verb~(a3+3)*b~  = YES, \verb~ lp:(, id:a, op:+, num:3, rparen:), op:*, id:b ~
+  \item \verb~)()++-33~ = YES, \verb~ rp:), lp:(, rp:), op:+, op:+, num:-33 ~
+  \item \verb~(b42/3)*3~  = NO, \verb~/~ is not an accepted token.
+\end{itemize}
+
+\addcontentsline{toc}{section}{Question 5}
+\section*{Question 5}
+Q: Suppose the context-free grammar $G$:
+\begin{Verbatim}[mathescape,commandchars=\\\{\}]
+    S ::= A.S.B | B.S.A | $\epsilon$
+    A ::= a | $\epsilon$
+    B ::= b
+\end{Verbatim}
+where the starting symbol is $S$, which of the following are in the language of $G$?:\\
+\\
+A:
+\begin{multicols}{2}
+\begin{itemize}
+    \item $a$ - No, a must be followed by b
+    \item $b$ - Yes
+    \item $ab$ - Yes
+    \item $ba$ - Yes
+    \item $bb$ - Yes (B . (B . S . A) . A)
+    \item $baa$ - No, a must be followed by b
+\end{itemize}
+\end{multicols}
+
+\addcontentsline{toc}{section}{Question 6}
+\section*{Question 6}
+Q: Suppose the context-free grammar $S \; := \; a.S.a \;|\; b.S.b \;|\; \epsilon$ \\
+Describe the language generated by this grammar. \\
+\\
+A: All even-length palindromes over the alphabet \{a,b\}.
+
+\addcontentsline{toc}{section}{Question 7 (Optional)}
+\section*{Question 7 (Optional)}
+Q: Prove by induction on $r$ that the property $L(der \; c \; r) = Der \; c \; (L(r))$ holds. \\
+\\
+A:
+$Der(c, A) \equiv \{s \; | \; c::s \in A\}$, i.e. the derivate of language A w.r.t character c
+is the language of all strings in A beginning with c, with the c `chopped off' the front. \\
+
+Basis:
+\begin{itemize}
+    \item $R=0$: $der(c, R) = 0$ and $L(0) = \{\}$. $Der(c, \{\})=\{\}$ so holds.
+    \item $R=1$: $der(c, R) = 0$, $L(0)$ as above, so holds.
+    \item $R=c_1$: $der(c, c_1) = 1 \; if c=c_1 \; else \; 0\}$.\\
+    $L(1) = \{[]\}$ and $L(0) = \{\}$. \\
+    $Der(c, \{c\})=\{[]\}$ and $Der(c, \{d\})=\{\}$ so holds.
+\end{itemize}
+
+Inductive Hypothesis: \\
+
+Assume some expressions $r_1$, $r_2$ such that $L(der(c, r_i)) \equiv Der(c, L(r_i))$ holds for $i = 1, 2$.
+Show true for remaining regex cases. \\
+\\
+Inductive Proof:
+\begin{itemize}
+    \item $R=r_1+r_2$ \\
+    The language accepted by $r_1+r_2$ is $L(r_1) \cup L(r_2)$.\\
+    The language accepted by $der(c, r_1+r_2)$ is $L(der(c,r_1)) \cup L(der(c,r_2))$.\\
+    Since by IH $L(der(c, r_i)) \equiv Der(c, L(r_i))$ holds, \\
+    $Der(c, L(r_1+r_2)) = L(der(c,r_1)) \cup L(der(c,r_2)) = L(der(c, r_1+r_2))$ also holds.
+
+    \item $R=r_1\;.\;r_2$ \\
+    The language accepted by $r_1.r_2$ is $L(r_1) @ L(r_2)$.\\
+    The language accepted by $der(c, r_1+r_2)$ is \\
+    $L(((der(c, r_1)).r_2) + der(c, r_2))$ if $\epsilon \in L(r_1)$,
+    else $L((der(c, r_1)).r_2)$.\\
+
+    The second case is equivalent to $L(der(c,r_1)) @ L(r_2)$
+    and the first case is equivalent to $(L(der(c,r_1)) @ L(r_2)) \cup L(der(c,r_2))$
+
+    Since by IH $L(der(c, r_i)) \equiv Der(c, L(r_i))$ holds, \\
+    when $\epsilon \in L(r_1)$: \\
+    $Der(c, L(r_1.r_2)) = (L(der(c,r_1)) @ L(der(c,r_2))) \cup L(der(c,r_2)) = L(der(c, r_1+r_2))$ also holds,
+    as does $Der(c, L(r_1.r_2)) = L(der(c,r_1)) @ L(der(c,r_2)) = L(der(c, r_1+r_2))$ otherwise.
+
+
+    \item $R=r_1*$\\
+    $D = der(c, R) = der(c, r_1*)\;.\;r*$\\
+    $L(D) = L(der(c, r_1)) \cup L(R)$ \\
+    $Der(c, r*) = Der(c, L(r)) \cup L(r*) = L(D)$\\
+    Holds, by all previous cases as $r_i$ can only be of the forms:\\
+     $r:=0|1|c|r_1+r_2|r_1.r_2|r^*$.
+
+\end{itemize}
+
+\end{document}
