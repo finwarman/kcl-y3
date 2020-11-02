@@ -1,0 +1,101 @@
+% !TeX root = ./07_answers.tex
+
+\documentclass[english]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fvextra} % loads also fancyvrb
+\usepackage{pgfgantt}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{dirtytalk}
+\usepackage{xparse}
+\usepackage{xpatch}
+\usepackage[bottom=1.2in,top=1.2in]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata,positioning}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+
+\DeclareMathVersion{ttmath}
+\DeclareSymbolFont{latinletters}{OT1}{\ttdefault}{m}{n}
+%\SetSymbolFont{latinletters}{ttmath}{OT1}{\ttdefault}{m}{n}
+\SetSymbolFont{letters}{ttmath}{OML}{ccm}{m}{it}
+\SetSymbolFont{symbols}{ttmath}{OMS}{ccsy}{m}{n}
+\SetSymbolFont{largesymbols}{ttmath}{OMX}{ccex}{m}{n}
+
+% https://tex.stackexchange.com/questions/150965/insert-symbols-inside-verbatim-mode-latex/156419
+
+\newcommand{\changeletters}{%
+  \count255=`A
+  \advance\count255 -1
+  \loop\ifnum\count255<`Z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`a
+  \advance\count255 -1
+  \loop\ifnum\count255<`z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`0
+  \advance\count255 -1
+  \loop\ifnum\count255<`9
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+}
+
+\xapptocmd{\ttfamily}{\mathversion{ttmath}\changeletters}{}{}
+
+\setkomafont{disposition}{\normalfont\bfseries}
+\definecolor{light-gray}{gray}{0.95}
+
+\begin{document}
+
+\NewDocumentCommand{\codeword}{v}{%
+\colorbox{light-gray}{\texttt{\textcolor{black}{#1}}}%
+}
+
+% == START: TITLE == %
+
+\subtitle{6CCS3CFL - Compilers \& Formal Languages}
+\title{Homework 7}
+\author{Finley Warman}
+\date{\today}
+
+\maketitle
+
+% == END: TITLE == %
+% == START: CONTENTS == %
+
+\tableofcontents
+\par\noindent\rule{\textwidth}{0.4pt}
+
+% == END: CONTENTS == %
+
+\newpage
+
+% MAIN CONTENT:
+
+\addcontentsline{toc}{section}{Question 1}
+\section*{Question 1}
+Q:
+\\
+\\
+A:
+
+\end{document}
