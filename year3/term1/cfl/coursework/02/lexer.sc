@@ -344,6 +344,7 @@ def test() = {
   // println(lexing_simp(RTP2, "").map({case (s1, s2) => s"$s1: $s2"}).mkString(""))
 
   println();
+  //
 
   // todo: plus, opt, etc.
 
