@@ -263,7 +263,7 @@ val DIGIT      : Rexp = RANGE(digits)    // 0..9
 val NUMBER     = DIGIT | (PREDIG ~ DIGIT.%)  // ([0-9])|([1-9][0-9]*)
 
 // symbols
-val OP         : Rexp = RANGE("+-*%/".toSet) "+" | "-" | "*" | "%" | "/" | "==" | "!=" | ">" | "<" | "<=" | ">=" | ":=" | "&&" | "||"
+val OP         : Rexp = "+" | "-" | "*" | "%" | "/" | "==" | "!=" | ">" | "<" | "<=" | ">=" | ":=" | "&&" | "||"
 val SYM        : Rexp = RANGE(letters ++ "._><=;,:\\".toSet)
 val RPAREN     : Rexp = ")"
 val LPAREN     : Rexp = "("
