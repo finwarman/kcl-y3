@@ -327,6 +327,13 @@ def esc(raw: String): String = {
   Literal(Constant(raw)).toString
 }
 def escape(tks: List[(String, String)]) = tks.map{ case (s1, s2) => s"$s1:\t " + esc(s2) }
+def escape(tks: List[(String, String)], filter_space: Boolean): List[String] = {
+  if (filter_space) {
+    tks.filter{case (s1, s2) => s1 != "wspc"}.map{case (s1, s2) => s"$s1:\t " + esc(s2)}
+  } else {
+    escape(tks);
+  }
+}
 
 // ===========================================
 // TESTS
@@ -482,7 +489,7 @@ def while_lang_lexing_tests() = {
 @doc("while program tests")
 @main
 def while_program_tests() = {
-  println("\nQuestion 3 programs lexing (while language)...")
+  println("\nQuestion 3 programs lexing (while language)... [filtering whitespace]")
 
    println("\n========== collatz.while ==========\n")
 
@@ -497,7 +504,7 @@ while n > 1 do {
 write "Yes";
 """
 
-  println(escape(lexing_simp(WHILE_LANG_REG, collatz_while)).mkString("\n"))
+  println(escape(lexing_simp(WHILE_LANG_REG, collatz_while), true).mkString("\n"))
 
   println("\n===================================\n")
   println("\n========== factors.while ==========\n")
@@ -518,7 +525,7 @@ while n != 1 do {
     f := f + 1
 }"""
 
-  println(escape(lexing_simp(WHILE_LANG_REG, factors_while)).mkString("\n"))
+  println(escape(lexing_simp(WHILE_LANG_REG, factors_while), true).mkString("\n"))
 
   println("\n===================================\n")
 
@@ -540,7 +547,7 @@ while 0 < x do {
 
 """
 
-  println(escape(lexing_simp(WHILE_LANG_REG, while_three_while)).mkString("\n"))
+  println(escape(lexing_simp(WHILE_LANG_REG, while_three_while), true).mkString("\n"))
 
   println("\n===================================\n")
 
@@ -574,7 +581,7 @@ while bnd < 101 do {
   bnd := bnd + 1
 }"""
 
-  println(escape(lexing_simp(WHILE_LANG_REG, collatz2_while)).mkString("\n"))
+  println(escape(lexing_simp(WHILE_LANG_REG, collatz2_while), true).mkString("\n"))
 
   println("\n===================================\n")
 

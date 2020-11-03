@@ -1,0 +1,415 @@
+% !TeX root = ./02_answers.tex
+
+\documentclass[english]{scrartcl}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{fvextra} % loads also fancyvrb
+\usepackage{pgfgantt}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{dirtytalk}
+\usepackage{xparse}
+\usepackage{xpatch}
+\usepackage[bottom=1.2in,top=1.2in]{geometry}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+
+\DeclareMathVersion{ttmath}
+\DeclareSymbolFont{latinletters}{OT1}{\ttdefault}{m}{n}
+%\SetSymbolFont{latinletters}{ttmath}{OT1}{\ttdefault}{m}{n}
+\SetSymbolFont{letters}{ttmath}{OML}{ccm}{m}{it}
+\SetSymbolFont{symbols}{ttmath}{OMS}{ccsy}{m}{n}
+\SetSymbolFont{largesymbols}{ttmath}{OMX}{ccex}{m}{n}
+
+% https://tex.stackexchange.com/questions/150965/insert-symbols-inside-verbatim-mode-latex/156419
+
+\newcommand{\changeletters}{%
+  \count255=`A
+  \advance\count255 -1
+  \loop\ifnum\count255<`Z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`a
+  \advance\count255 -1
+  \loop\ifnum\count255<`z
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+  \count255=`0
+  \advance\count255 -1
+  \loop\ifnum\count255<`9
+    \advance\count255 1
+    \mathcode\count255=\numexpr\number\symlatinletters*256+\count255\relax
+  \repeat
+}
+
+\xapptocmd{\ttfamily}{\mathversion{ttmath}\changeletters}{}{}
+
+\setkomafont{disposition}{\normalfont\bfseries}
+\definecolor{light-gray}{gray}{0.95}
+
+\begin{document}
+
+\NewDocumentCommand{\codeword}{v}{%
+\colorbox{light-gray}{\texttt{\textcolor{black}{#1}}}%
+}
+
+% == START: TITLE == %
+
+\subtitle{6CCS3CFL - Compilers \& Formal Languages}
+\title{Coursework 2}
+\author{Finley Warman}
+\date{\today}
+
+\maketitle
+
+\begin{center}
+    \textit{N.B. to run all test cases and questions, run:} `\verb|amm 02_coursework.sc all|'
+\end{center}
+
+% == END: TITLE == %
+% == START: CONTENTS == %
+
+\tableofcontents
+\par\noindent\rule{\textwidth}{0.4pt}
+
+% == END: CONTENTS == %
+
+% MAIN CONTENT:
+
+\newpage
+
+\addcontentsline{toc}{section}{Question 1}
+\section*{Question 1}
+Implemented `simple' and `extended' regular expressions, including REC, in \verb~02_coursework.sc~.
+Expressions added for all tokens described, including expression \verb~WHILE_LANG_REG~ representing all valid tokens
+of the WHILE language.\\
+(See KEYWORD, OP, ID, SEMI, NUMBER, COMMENT, STRING, LPAREN, RPAREN, LCURL, RCURL, WHITESPACE)
+
+\addcontentsline{toc}{section}{Question 2}
+\section*{Question 2}
+Q: Definitions for mkeps:
+\begin{verbatim}
+    ...
+    mkeps([c1,...,cn]) == N/A, not nullable
+    mkeps(r+)          == Plus[mkeps(r)]
+    mkeps(r?)          == Empty
+    mkeps(r{n})        == if (n=0) NTimes[] else NTimes[mkeps(r)]
+\end{verbatim}
+
+
+Q: Definitions for inj:
+\begin{verbatim}
+    ...
+    inj([c1,...,cn]) c Empty        == Char(c)
+    inj(r+) c Seq(v, Stars vs)      == Plus(inj(r) c v :: vs)
+    inj(r?) c v                     == Opt(inj(r) c v)
+    inj(r{0}) c v                   == Empty
+    inj(r{n}) c Seq(v, NTimes vs)   == NTimes(inj(r) c v :: vs)
+\end{verbatim}
+
+To test $a^{\{3\}}$ and $(a+\textbf{1})^{\{3\}}$, call \verb|amm 02_coursework.sc lex_extended|.\\
+\\
+Tokens for expressions from Q1:
+\begin{verbatim}
+WHILE_LANG_REG = (
+  ("kwd" : KEYWORD) +
+  ("op"  : OP)      +
+  ("id"  : ID)      +
+  ("semi": SEMI)    +
+  ("num" : NUMBER)  +
+  ("comm": COMMENT) +
+  ("str" : STRING)  +
+  ("brkt": (LPAREN + RPAREN)) +
+  ("crly": (LCURL  + RCURL )) +
+  ("wspc": WHITESPACE)
+)*
+\end{verbatim}
+
+The token sequence for \verb|read n;| (\verb|amm 02_coursework.sc while_lang_lexing_tests|):
+\begin{verbatim}
+    kwd:     "read"
+    wspc:    " "
+    id:      "n"
+    semi:    ";"
+\end{verbatim}
+
+\addcontentsline{toc}{section}{Question 3}
+\section*{Question 3}
+Resulting tokens for each program, filtering whitespace \verb~wspc~:\\
+(\verb|amm 02_coursework.sc program_lexing_tests|)
+\\
+\begin{verbatim}
+    ========== collatz.while ==========
+
+    kwd:     "write"
+    str:     "\"Input a number \""
+    semi:    ";"
+    kwd:     "read"
+    id:      "n"
+    semi:    ";"
+    kwd:     "while"
+    id:      "n"
+    op:      ">"
+    num:     "1"
+    kwd:     "do"
+    crly:    "{"
+    kwd:     "if"
+    id:      "n"
+    op:      "%"
+    num:     "2"
+    op:      "=="
+    num:     "0"
+    kwd:     "then"
+    id:      "n"
+    op:      ":="
+    id:      "n"
+    op:      "/"
+    num:     "2"
+    kwd:     "else"
+    id:      "n"
+    op:      ":="
+    num:     "3"
+    op:      "*"
+    id:      "n"
+    op:      "+"
+    num:     "1"
+    semi:    ";"
+    crly:    "}"
+    semi:    ";"
+    kwd:     "write"
+    str:     "\"Yes\""
+    semi:    ";"
+
+    ===================================
+\end{verbatim}
+\newpage
+\begin{verbatim}
+    ========== factors.while ==========
+
+    comm:    "// Find all factors of a given input number\n"
+    comm:    "// by J.R. Cordy August 2005\n"
+    kwd:     "write"
+    str:     "\"Input n please\""
+    semi:    ";"
+    kwd:     "read"
+    id:      "n"
+    semi:    ";"
+    kwd:     "write"
+    str:     "\"The factors of n are\""
+    semi:    ";"
+    id:      "f"
+    op:      ":="
+    num:     "2"
+    semi:    ";"
+    kwd:     "while"
+    id:      "n"
+    op:      "!="
+    num:     "1"
+    kwd:     "do"
+    crly:    "{"
+    kwd:     "while"
+    brkt:    "("
+    id:      "n"
+    op:      "/"
+    id:      "f"
+    brkt:    ")"
+    op:      "*"
+    id:      "f"
+    op:      "=="
+    id:      "n"
+    kwd:     "do"
+    crly:    "{"
+    kwd:     "write"
+    id:      "f"
+    semi:    ";"
+    id:      "n"
+    op:      ":="
+    id:      "n"
+    op:      "/"
+    id:      "f"
+    crly:    "}"
+    semi:    ";"
+    id:      "f"
+    op:      ":="
+    id:      "f"
+    op:      "+"
+    num:     "1"
+    crly:    "}"
+
+    ===================================
+\end{verbatim}
+\newpage
+\begin{verbatim}
+    ==========  loops.while  ==========
+
+    id:      "start"
+    op:      ":="
+    num:     "1000"
+    semi:    ";"
+    id:      "x"
+    op:      ":="
+    id:      "start"
+    semi:    ";"
+    id:      "y"
+    op:      ":="
+    id:      "start"
+    semi:    ";"
+    id:      "z"
+    op:      ":="
+    id:      "start"
+    semi:    ";"
+    kwd:     "while"
+    num:     "0"
+    op:      "<"
+    id:      "x"
+    kwd:     "do"
+    crly:    "{"
+    kwd:     "while"
+    num:     "0"
+    op:      "<"
+    id:      "y"
+    kwd:     "do"
+    crly:    "{"
+    kwd:     "while"
+    num:     "0"
+    op:      "<"
+    id:      "z"
+    kwd:     "do"
+    crly:    "{"
+    id:      "z"
+    op:      ":="
+    id:      "z"
+    op:      "-"
+    num:     "1"
+    crly:    "}"
+    semi:    ";"
+    id:      "z"
+    op:      ":="
+    id:      "start"
+    semi:    ";"
+    id:      "y"
+    op:      ":="
+    id:      "y"
+    op:      "-"
+    num:     "1"
+    crly:    "}"
+    semi:    ";"
+    id:      "y"
+    op:      ":="
+    id:      "start"
+    semi:    ";"
+    id:      "x"
+    op:      ":="
+    id:      "x"
+    op:      "-"
+    num:     "1"
+    crly:    "}"
+
+    ===================================
+\end{verbatim}
+\newpage
+\begin{verbatim}
+    ========= collatz2.while ==========
+
+    comm:    "// Collatz series\n"
+    comm:    "//\n"
+    comm:    "// needs writing of strings and numbers; comments\n"
+    id:      "bnd"
+    op:      ":="
+    num:     "1"
+    semi:    ";"
+    kwd:     "while"
+    id:      "bnd"
+    op:      "<"
+    num:     "101"
+    kwd:     "do"
+    crly:    "{"
+    kwd:     "write"
+    id:      "bnd"
+    semi:    ";"
+    kwd:     "write"
+    str:     "\": \""
+    semi:    ";"
+    id:      "n"
+    op:      ":="
+    id:      "bnd"
+    semi:    ";"
+    id:      "cnt"
+    op:      ":="
+    num:     "0"
+    semi:    ";"
+    kwd:     "while"
+    id:      "n"
+    op:      ">"
+    num:     "1"
+    kwd:     "do"
+    crly:    "{"
+    kwd:     "write"
+    id:      "n"
+    semi:    ";"
+    kwd:     "write"
+    str:     "\",\""
+    semi:    ";"
+    kwd:     "if"
+    id:      "n"
+    op:      "%"
+    num:     "2"
+    op:      "=="
+    num:     "0"
+    kwd:     "then"
+    id:      "n"
+    op:      ":="
+    id:      "n"
+    op:      "/"
+    num:     "2"
+    kwd:     "else"
+    id:      "n"
+    op:      ":="
+    num:     "3"
+    op:      "*"
+    id:      "n"
+    op:      "+"
+    num:     "1"
+    semi:    ";"
+    id:      "cnt"
+    op:      ":="
+    id:      "cnt"
+    op:      "+"
+    num:     "1"
+    crly:    "}"
+    semi:    ";"
+    kwd:     "write"
+    str:     "\" => \""
+    semi:    ";"
+    kwd:     "write"
+    id:      "cnt"
+    semi:    ";"
+    kwd:     "write"
+    str:     "\"\\n\""
+    semi:    ";"
+    id:      "bnd"
+    op:      ":="
+    id:      "bnd"
+    op:      "+"
+    num:     "1"
+    crly:    "}"
+
+    ===================================
+\end{verbatim}
+
+\end{document}

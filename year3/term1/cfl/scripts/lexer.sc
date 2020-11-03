@@ -1,7 +1,7 @@
 // A simple lexer inspired by work of Sulzmann & Lu
 //==================================================
 //
-// Call the test cases with 
+// Call the test cases with
 //
 //   amm lexer.sc small
 //   amm lexer.sc fib
@@ -11,17 +11,17 @@
 
 
 // regular expressions including records
-abstract class Rexp 
+abstract class Rexp
 case object ZERO extends Rexp
 case object ONE extends Rexp
 case class CHAR(c: Char) extends Rexp
-case class ALT(r1: Rexp, r2: Rexp) extends Rexp 
-case class SEQ(r1: Rexp, r2: Rexp) extends Rexp 
-case class STAR(r: Rexp) extends Rexp 
-case class RECD(x: String, r: Rexp) extends Rexp  
+case class ALT(r1: Rexp, r2: Rexp) extends Rexp
+case class SEQ(r1: Rexp, r2: Rexp) extends Rexp
+case class STAR(r: Rexp) extends Rexp
+case class RECD(x: String, r: Rexp) extends Rexp
                 // records for extracting strings or tokens
-  
-// values  
+
+// values
 abstract class Val
 case object Empty extends Val
 case class Chr(c: Char) extends Val
@@ -30,7 +30,7 @@ case class Left(v: Val) extends Val
 case class Right(v: Val) extends Val
 case class Stars(vs: List[Val]) extends Val
 case class Rec(x: String, v: Val) extends Val
-   
+
 // some convenience for typing in regular expressions
 
 def charlist2rexp(s : List[Char]): Rexp = s match {
@@ -38,7 +38,7 @@ def charlist2rexp(s : List[Char]): Rexp = s match {
   case c::Nil => CHAR(c)
   case c::s => SEQ(CHAR(c), charlist2rexp(s))
 }
-implicit def string2rexp(s : String) : Rexp = 
+implicit def string2rexp(s : String) : Rexp =
   charlist2rexp(s.toList)
 
 implicit def RexpOps(r: Rexp) = new {
@@ -71,7 +71,7 @@ def der(c: Char, r: Rexp) : Rexp = r match {
   case ONE => ZERO
   case CHAR(d) => if (c == d) ONE else ZERO
   case ALT(r1, r2) => ALT(der(c, r1), der(c, r2))
-  case SEQ(r1, r2) => 
+  case SEQ(r1, r2) =>
     if (nullable(r1)) ALT(SEQ(der(c, r1), r2), der(c, r2))
     else SEQ(der(c, r1), r2)
   case STAR(r) => SEQ(der(c, r), STAR(r))
@@ -109,7 +109,7 @@ def env(v: Val) : List[(String, String)] = v match {
 
 def mkeps(r: Rexp) : Val = r match {
   case ONE => Empty
-  case ALT(r1, r2) => 
+  case ALT(r1, r2) =>
     if (nullable(r1)) Left(mkeps(r1)) else Right(mkeps(r2))
   case SEQ(r1, r2) => Sequ(mkeps(r1), mkeps(r2))
   case STAR(r) => Stars(Nil)
@@ -123,7 +123,7 @@ def inj(r: Rexp, c: Char, v: Val) : Val = (r, v) match {
   case (SEQ(r1, r2), Right(v2)) => Sequ(mkeps(r1), inj(r2, c, v2))
   case (ALT(r1, r2), Left(v1)) => Left(inj(r1, c, v1))
   case (ALT(r1, r2), Right(v2)) => Right(inj(r2, c, v2))
-  case (CHAR(d), Empty) => Chr(c) 
+  case (CHAR(d), Empty) => Chr(c)
   case (RECD(x, r1), _) => Rec(x, inj(r1, c, v))
 }
 
@@ -138,9 +138,9 @@ def F_ALT(f1: Val => Val, f2: Val => Val) = (v:Val) => v match {
 def F_SEQ(f1: Val => Val, f2: Val => Val) = (v:Val) => v match {
   case Sequ(v1, v2) => Sequ(f1(v1), f2(v2))
 }
-def F_SEQ_Empty1(f1: Val => Val, f2: Val => Val) = 
+def F_SEQ_Empty1(f1: Val => Val, f2: Val => Val) =
   (v:Val) => Sequ(f1(Empty), f2(v))
-def F_SEQ_Empty2(f1: Val => Val, f2: Val => Val) = 
+def F_SEQ_Empty2(f1: Val => Val, f2: Val => Val) =
   (v:Val) => Sequ(f1(v), f2(Empty))
 def F_RECD(f: Val => Val) = (v:Val) => v match {
   case Rec(x, v) => Rec(x, f(v))
@@ -156,7 +156,7 @@ def simp(r: Rexp): (Rexp, Val => Val) = r match {
       case (ZERO, _) => (r2s, F_RIGHT(f2s))
       case (_, ZERO) => (r1s, F_LEFT(f1s))
       case _ => if (r1s == r2s) (r1s, F_LEFT(f1s))
-                else (ALT (r1s, r2s), F_ALT(f1s, f2s)) 
+                else (ALT (r1s, r2s), F_ALT(f1s, f2s))
     }
   }
   case SEQ(r1, r2) => {
@@ -175,15 +175,15 @@ def simp(r: Rexp): (Rexp, Val => Val) = r match {
 
 // lexing functions including simplification
 def lex_simp(r: Rexp, s: List[Char]) : Val = s match {
-  case Nil => if (nullable(r)) mkeps(r) else 
-    { throw new Exception("lexing error") } 
+  case Nil => if (nullable(r)) mkeps(r) else
+    { throw new Exception("lexing error") }
   case c::cs => {
     val (r_simp, f_simp) = simp(der(c, r))
     inj(r, c, f_simp(lex_simp(r_simp, cs)))
   }
 }
 
-def lexing_simp(r: Rexp, s: String) = 
+def lexing_simp(r: Rexp, s: String) =
   env(lex_simp(r, s.toList))
 
 
@@ -200,9 +200,9 @@ def RANGE(s: String) = Range(s.toList)
 
 val SYM = RANGE("ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz_")
 val DIGIT = RANGE("0123456789")
-val ID = SYM ~ (SYM | DIGIT).% 
+val ID = SYM ~ (SYM | DIGIT).%
 val NUM = PLUS(DIGIT)
-val KEYWORD : Rexp = "skip" | "while" | "do" | "if" | "then" | "else" | "read" | "write" 
+val KEYWORD : Rexp = "skip" | "while" | "do" | "if" | "then" | "else" | "read" | "write"
 val SEMI: Rexp = ";"
 val OP: Rexp = ":=" | "=" | "-" | "+" | "*" | "!=" | "<" | ">"
 val WHITESPACE = PLUS(" " | "\n" | "\t")
@@ -211,13 +211,13 @@ val LPAREN: Rexp = "}"
 val STRING: Rexp = "\"" ~ SYM.% ~ "\""
 
 
-val WHILE_REGS = (("k" $ KEYWORD) | 
-                  ("i" $ ID) | 
-                  ("o" $ OP) | 
-                  ("n" $ NUM) | 
-                  ("s" $ SEMI) | 
+val WHILE_REGS = (("k" $ KEYWORD) |
+                  ("i" $ ID) |
+                  ("o" $ OP) |
+                  ("n" $ NUM) |
+                  ("s" $ SEMI) |
                   ("str" $ STRING) |
-                  ("p" $ (LPAREN | RPAREN)) | 
+                  ("p" $ (LPAREN | RPAREN)) |
                   ("w" $ WHITESPACE)).%
 
 
@@ -232,7 +232,7 @@ def small() = {
   println(s"test: $prog0")
   println(lexing_simp(WHILE_REGS, prog0))
 
-  val prog1 = """read  n; write n"""  
+  val prog1 = """read  n; write n"""
   println(s"test: $prog1")
   println(lexing_simp(WHILE_REGS, prog1))
 }
@@ -285,7 +285,7 @@ while 0 < x do {
   };
   z := start;
   y := y - 1
- };     
+ };
  y := start;
  x := x - 1
 }
@@ -303,4 +303,4 @@ def loops() = {
 
 @doc("All tests.")
 @main
-def all() = { small(); fib() ; loops() } 
+def all() = { small(); fib() ; loops() }
