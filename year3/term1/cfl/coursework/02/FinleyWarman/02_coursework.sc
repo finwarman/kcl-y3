@@ -288,7 +288,8 @@ val WHILE_LANG_REG = (
   ("str"  $ STRING)  |
   ("brkt" $ (LPAREN | RPAREN)) |
   ("crly" $ (LCURL  | RCURL))  |
-  ("wspc" $ WHITESPACE)
+  ("wspc" $ WHITESPACE) |
+  ("sym"  $ SYM)
 ).%
 
 // ===========================================
@@ -480,7 +481,7 @@ def while_lang_lexing_tests() = {
   println(escape(lexing_simp(WHILE_LANG_REG, read_n)).mkString("\n"))
   println();
 
-  val read_a = """ifif if24;"""
+  val read_a = """ifif if24;:"""
   println(s"test lexing prog [$read_n]:\n")
   println(escape(lexing_simp(WHILE_LANG_REG, read_a)).mkString("\n"))
   println();
