@@ -61,7 +61,6 @@ case class TokParser(v: String) extends Parser[List[Token], String] {
 // atomic parser for strings
 case object StrParser extends Parser[List[Token], String] {
   def parse(toks: List[Token]) = toks match {
-    //   case LParen::("str", id)::RParen::tail => Set((id, tail)) // TODO - keep this here?
       case ("str", id)::tail => Set((id, tail))
       case _ => Set();
   }
@@ -70,7 +69,6 @@ case object StrParser extends Parser[List[Token], String] {
 // atomic parser for identifiers (variable names)
 case object IdParser extends Parser[List[Token], String] {
   def parse(toks: List[Token]) = toks match {
-    //   case LParen::("id", id)::RParen::tail => Set((id, tail)) // TODO - keep this here?
       case ("id", id)::tail => Set((id, tail))
       case _ => Set();
   }
@@ -272,8 +270,8 @@ write minus2
 """
 
 // XXX - modify start value (default: 1000)
-val while_three_while =
-"""start := 300;
+def while_three_while(start: Integer = 1000) =
+s"""start := $start;
 x := start;
 y := start;
 z := start;
@@ -335,11 +333,15 @@ while bnd < 101 do {
 }
 """
 
+val parse_me = "if (a < b) then skip else a := a * b + 1"
+
 // === TEST PROGRAMS =================
-lex_parse_run_program(fib_while,         "fib.while");
-lex_parse_run_program(prime_while,       "primes.while");
-lex_parse_run_program(while_three_while, "loops.while",   do_time=true);
-lex_parse_run_program(collatz_while,     "collatz.while", stdout_newline=false, do_time=true);
+// parse_program(parse_me);
+// lex_parse_run_program(fib_while,              "fib.while");
+// lex_parse_run_program(prime_while,            "primes.while");
+// lex_parse_run_program(while_three_while(100), "loops.while",   do_time=true);
+// lex_parse_run_program(collatz_while,          "collatz.while", stdout_newline=false);
+run_loop_benchmarks;
 
 // === TEST HELPERS =================
 
@@ -375,8 +377,31 @@ def time[R](block: => R): R = {
     val result = block // call-by-name
     val end = System.nanoTime()
     val dur = (end-start)/1000000000.0;
-    println("Elapsed time: " + "%.3f".format(dur) + " seconds")
+    println("\rElapsed time: " + "%.3f".format(dur) + " seconds")
     result
+}
+
+// Given a program, lex and parser it, giving the AST
+def parse_program(program_text: String) = {
+  println("=============== Program: ==============\n");
+  println(program_text);
+  println("\n=====================================");
+  println("============ LEXED TOKENS ===========\n");
+  val tokens = Lexer.tokenize_string_program(program_text);
+  Lexer.pretty_print_tokens(tokens);
+  println();
+  println("=====================================");
+  println("============= PARSED AST ============\n");
+  val parsed = Program.parse_all(tokens);
+  if (!parsed.isEmpty) {
+        pprint(parsed, toplevel=true);
+        println();
+  } else {
+        println(parsed);
+        println("No AST was returned, not interpreting");
+  }
+  println("=====================================");
+  scala.io.StdIn.readLine("Press ENTER to continue...");
 }
 
 // Given a program string, lex and parse it, then run it with the interpreter
@@ -415,7 +440,7 @@ def lex_parse_run_program(
 
         val result = if (do_time) time{eval(parsed.head, stdout_newline)} else eval(parsed.head, stdout_newline);
 
-        println("\n>done!\n")
+        println("\n>done!\n");
         println("Resulting environment: (variable->value)")
         result foreach {case (key, value) => val k = key.padTo(10," ").mkString;println(s" - $k => $value")}
 
@@ -426,4 +451,17 @@ def lex_parse_run_program(
 
     println("=====================================");
     scala.io.StdIn.readLine("Press ENTER to continue...");
+}
+
+// run benchmarks on loop program
+def run_loop_benchmarks = {
+  println("\nBenchmarking while-loop program...\n")
+  val loop_sizes = (0 to 4).map(x => x * 100);
+  loop_sizes.map(size => {
+      val ast = Program.parse_all(Lexer.tokenize_string_program(while_three_while(size)));
+      println(s"Start Value: $size");
+      time {eval(ast.head)};
+      println()
+  })
+  println("\nDone!\n")
 }
