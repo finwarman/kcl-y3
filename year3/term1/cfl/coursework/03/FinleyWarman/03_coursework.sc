@@ -1,250 +1,267 @@
-// Parser Combinators:
-// Simple Version for WHILE-language
-//====================================
-//
-// with some added convenience for
-// map-parsers and grammar rules
-//
-// call with
-//
-//    amm comb2.sc
+import $file.lexer
 
-
-// more convenience for the map parsers later on;
-// it allows writing nested patterns as
-// case x ~ y ~ z => ...
+val Lexer = lexer.Lexer
+type Token = (String, String)
 
 case class ~[+A, +B](x: A, y: B)
 
-// constraint for the input
-type IsSeq[A] = A => Seq[_]
+// === PARSER ======================
 
+type IsSeq[A] = A => Seq[_]
+// sequence constraint on parser input type
 
 abstract class Parser[I : IsSeq, T]{
   def parse(in: I): Set[(T, I)]
 
   def parse_all(in: I) : Set[T] =
-    for ((hd, tl) <- parse(in);
-        if tl.isEmpty) yield hd
+    for ((hd, tl) <- parse(in); if tl.isEmpty) yield hd
+}
+// ================================
+// === PARSER COMBINATORS =========
+
+//=> sequence parser
+class SeqParser[I : IsSeq, T, S]
+    (p: => Parser[I, T],
+     q: => Parser[I, S])
+extends Parser[I, ~[T, S]]
+{
+  def parse(in: I) ={
+    for ((hd1, tl1) <- p.parse(in); (hd2, tl2) <- q.parse(tl1))
+    yield (new ~(hd1, hd2), tl2)
+  }
 }
 
-// parser combinators
-
-// sequence parser
-class SeqParser[I : IsSeq, T, S](p: => Parser[I, T],
-                                 q: => Parser[I, S]) extends Parser[I, ~[T, S]] {
-  def parse(in: I) =
-    for ((hd1, tl1) <- p.parse(in);
-         (hd2, tl2) <- q.parse(tl1)) yield (new ~(hd1, hd2), tl2)
+//=> alternative parser
+class AltParser[I : IsSeq, T]
+    (p: => Parser[I, T], q: => Parser[I, T])
+extends Parser[I, T]
+{
+  def parse(in: I) = { p.parse(in) ++ q.parse(in)}
 }
 
-// alternative parser
-class AltParser[I : IsSeq, T](p: => Parser[I, T],
-                              q: => Parser[I, T]) extends Parser[I, T] {
-  def parse(in: I) = p.parse(in) ++ q.parse(in)
+//=> map parser (apply functions, semantic actions)
+class MapParser[I : IsSeq, T, S]
+    (p: => Parser[I, T],
+     f: T => S)
+extends Parser[I, S]
+{
+  def parse(in: I) = { for ((hd, tl) <- p.parse(in)) yield (f(hd), tl) }
 }
 
-// map parser
-class MapParser[I : IsSeq, T, S](p: => Parser[I, T],
-                                 f: T => S) extends Parser[I, S] {
-  def parse(in: I) = for ((hd, tl) <- p.parse(in)) yield (f(hd), tl)
+// ================================
+// === ATOMIC PARSERS =============
+
+case class TokParser(v: String) extends Parser[List[Token], String] {
+    def parse(toks: List[Token]) = toks match {
+        case (_, `v`)::tail => Set((v, tail))
+        case _              => Set()
+    }
 }
 
-
-
-// atomic parser for (particular) strings
-case class StrParser(s: String) extends Parser[String, String] {
-  def parse(sb: String) = {
-    val (prefix, suffix) = sb.splitAt(s.length)
-    if (prefix == s) {
-      println(prefix + " | " + suffix + "\n");
-      Thread.sleep(100);
-      Set((prefix, suffix))
-     } else Set()
+// atomic parser for strings
+case object StrParser extends Parser[List[Token], String] {
+  def parse(toks: List[Token]) = toks match {
+    //   case LParen::("str", id)::RParen::tail => Set((id, tail)) // TODO - keep this here?
+      case ("str", id)::tail => Set((id, tail))
+      case _ => Set();
   }
 }
 
 // atomic parser for identifiers (variable names)
-case object IdParser extends Parser[String, String] {
-  val reg = "[a-z][a-z,0-9]*".r
-  def parse(sb: String) = reg.findPrefixOf(sb) match {
-    case None => Set()
-    case Some(s) => Set(sb.splitAt(s.length))
+case object IdParser extends Parser[List[Token], String] {
+  def parse(toks: List[Token]) = toks match {
+    //   case LParen::("id", id)::RParen::tail => Set((id, tail)) // TODO - keep this here?
+      case ("id", id)::tail => Set((id, tail))
+      case _ => Set();
   }
 }
-
 
 // atomic parser for numbers (transformed into ints)
-case object NumParser extends Parser[String, Int] {
-  val reg = "[0-9]+".r
-  def parse(sb: String) = reg.findPrefixOf(sb) match {
-    case None => Set()
-    case Some(s) => {
-      val (hd, tl) = sb.splitAt(s.length)
-      Set((hd.toInt, tl))
-    }
+case object NumParser extends Parser[List[Token], Int] {
+  def parse(toks: List[Token]) = toks match {
+      case ("num", num)::tail => Set((num.toInt, tail))
+      case _ => Set();
   }
 }
 
-// the following string interpolation allows us to write
-// StrParser(_some_string_) more conveniently as
-//
-// p"<_some_string_>"
+// ================================
+// === HELPER FUNCTIONS ===========
 
+// allow us to write TokParser(_some_token_) as p"__some_token__"
 implicit def parser_interpolation(sc: StringContext) = new {
-    def p(args: Any*) = StrParser(sc.s(args:_*))
+    def p(args: Any*) = TokParser(sc.s(args:_*))
 }
 
 // more convenient syntax for parser combinators
 implicit def ParserOps[I : IsSeq, T](p: Parser[I, T]) = new {
-  def ||(q : => Parser[I, T]) = new AltParser[I, T](p, q)
-  def ~[S] (q : => Parser[I, S]) = new SeqParser[I, T, S](p, q)
-  def map[S](f: => T => S) = new MapParser[I, T, S](p, f)
+  def ||     (q : => Parser[I, T])  =  new AltParser[I, T]   (p, q)
+  def ~[S]   (q : => Parser[I, S])  =  new SeqParser[I, T, S](p, q)
+  def map[S] (f: => T => S)         =  new MapParser[I, T, S](p, f)
 }
 
+// remove outer quotes from strings and unescape special characters
+def unescape(s: String): String = {
+    val e = s.replaceAll("\"(.+)\"", "$1")  // remove quotes
+    StringContext treatEscapes e
+}
 
+// ================================
+// === AST TOKENS =================
 
-// the abstract syntax trees for the WHILE language
-abstract class Stmt
 abstract class AExp
 abstract class BExp
+abstract class Stmt
 
 type Block = List[Stmt]
 
-case object Skip extends Stmt
-case class If(a: BExp, bl1: Block, bl2: Block) extends Stmt
-case class While(b: BExp, bl: Block) extends Stmt
-case class Assign(s: String, a: AExp) extends Stmt
-case class Write(s: String) extends Stmt
+case class Var (s: String) extends AExp
+case class Num (i: Int)    extends AExp
 
-case class Var(s: String) extends AExp
-case class Num(i: Int) extends AExp
-case class Aop(o: String, a1: AExp, a2: AExp) extends AExp
-
-case object True extends BExp
+case object True  extends BExp
 case object False extends BExp
-case class Bop(o: String, a1: AExp, a2: AExp) extends BExp
-case class And(b1: BExp, b2: BExp) extends BExp
-case class Or(b1: BExp, b2: BExp) extends BExp
 
+case class ApplyArithOp (op: String, lhs: AExp, rhs: AExp) extends AExp
+case class ApplyBoolOp  (op: String, lhs: AExp, rhs: AExp) extends BExp
 
-// arithmetic expressions
-lazy val AExp: Parser[String, AExp] =
-  (Te ~ p"+" ~ AExp).map[AExp]{ case x ~ _ ~ z => Aop("+", x, z) } ||
-  (Te ~ p"-" ~ AExp).map[AExp]{ case x ~ _ ~ z => Aop("-", x, z) } || Te
-lazy val Te: Parser[String, AExp] =
-  (Fa ~ p"*" ~ Te).map[AExp]{ case x ~ _ ~ z => Aop("*", x, z) } ||
-  (Fa ~ p"/" ~ Te).map[AExp]{ case x ~ _ ~ z => Aop("/", x, z) } || Fa
-lazy val Fa: Parser[String, AExp] =
+// logical operators
+case class And(lhs: BExp, rhs: BExp) extends BExp
+case class Or (lhs: BExp, rhs: BExp)  extends BExp
+
+case object Skip extends Stmt
+case class  If     (cond: BExp, then_block: Block, else_block: Block) extends Stmt
+case class  While  (cond: BExp, do_block:  Block) extends Stmt
+case class  Assign (var_name: String, bound_exp: AExp)  extends Stmt
+
+case class  Read      (s: String)           extends Stmt
+case class  WriteVar  (s: String)           extends Stmt
+case class  WriteStr  (s: String)           extends Stmt
+
+// ================================
+// === AST STRUCTURE ==============
+
+//=> arithmetic expressions
+lazy val AExp: Parser[List[Token], AExp] =
+  (Mult ~ p"+" ~ AExp).map[AExp]{ case x ~ _ ~ z => ApplyArithOp("+", x, z) } ||
+  (Mult ~ p"-" ~ AExp).map[AExp]{ case x ~ _ ~ z => ApplyArithOp("-", x, z) } ||
+   Mult
+
+lazy val Mult: Parser[List[Token], AExp] =
+  (Term ~ p"*" ~ Mult).map[AExp]{ case x ~ _ ~ z => ApplyArithOp("*", x, z) } ||
+  (Term ~ p"/" ~ Mult).map[AExp]{ case x ~ _ ~ z => ApplyArithOp("/", x, z) } ||
+  (Term ~ p"%" ~ Mult).map[AExp]{ case x ~ _ ~ z => ApplyArithOp("%", x, z) } ||
+   Term
+
+lazy val Term: Parser[List[Token], AExp] =
    (p"(" ~ AExp ~ p")").map{ case _ ~ y ~ _ => y } ||
-   IdParser.map(Var) ||
-   NumParser.map(Num)
+    NumParser.map(Num) || IdParser.map(Var)
 
-// boolean expressions with some simple nesting
-lazy val BExp: Parser[String, BExp] =
-   (AExp ~ p"==" ~ AExp).map[BExp]{ case x ~ _ ~ z => Bop("==", x, z) } ||
-   (AExp ~ p"!=" ~ AExp).map[BExp]{ case x ~ _ ~ z => Bop("!=", x, z) } ||
-   (AExp ~ p"<" ~ AExp).map[BExp]{ case x ~ _ ~ z => Bop("<", x, z) } ||
-   (AExp ~ p">" ~ AExp).map[BExp]{ case x ~ _ ~ z => Bop(">", x, z) } ||
+
+//=> boolean expressions
+lazy val BExp: Parser[List[Token], BExp] =
+   (AExp ~ p"==" ~ AExp).map[BExp]{ case x ~ _ ~ z => ApplyBoolOp("==", x, z) } ||
+   (AExp ~ p"!=" ~ AExp).map[BExp]{ case x ~ _ ~ z => ApplyBoolOp("!=", x, z) } ||
+   (AExp ~  p"<" ~ AExp).map[BExp]{ case x ~ _ ~ z => ApplyBoolOp( "<", x, z) } ||
+   (AExp ~  p">" ~ AExp).map[BExp]{ case x ~ _ ~ z => ApplyBoolOp( ">", x, z) } ||
+   (AExp ~ p"<=" ~ AExp).map[BExp]{ case x ~ _ ~ z => ApplyBoolOp("<=", x, z) } ||
+   (AExp ~ p">=" ~ AExp).map[BExp]{ case x ~ _ ~ z => ApplyBoolOp(">=", x, z) } ||
    (p"(" ~ BExp ~ p")" ~ p"&&" ~ BExp).map[BExp]{ case _ ~ y ~ _ ~ _ ~ v => And(y, v) } ||
-   (p"(" ~ BExp ~ p")" ~ p"||" ~ BExp).map[BExp]{ case _ ~ y ~ _ ~ _ ~ v => Or(y, v) } ||
-   (p"true".map[BExp]{ _ => True }) ||
+   (p"(" ~ BExp ~ p")" ~ p"||" ~ BExp).map[BExp]{ case _ ~ y ~ _ ~ _ ~ v =>  Or(y, v) } ||
+   (p"true" .map[BExp]{ _ => True  }) ||
    (p"false".map[BExp]{ _ => False }) ||
    (p"(" ~ BExp ~ p")").map[BExp]{ case _ ~ x ~ _ => x }
 
-// a single statement
-lazy val Stmt: Parser[String, Stmt] =
-  ((p"skip".map[Stmt]{_ => Skip }) ||
-   (IdParser ~ p":=" ~ AExp).map[Stmt]{ case x ~ _ ~ z => Assign(x, z) } ||
-   (p"write(" ~ IdParser ~ p")").map[Stmt]{ case _ ~ y ~ _ => Write(y) } ||
-   (p"if" ~ BExp ~ p"then" ~ Block ~ p"else" ~ Block)
-     .map[Stmt]{ case _ ~ y ~ _ ~ u ~ _ ~ w => If(y, u, w) } ||
-   (p"while" ~ BExp ~ p"do" ~ Block).map[Stmt]{ case _ ~ y ~ _ ~ w => While(y, w) })
+//=> single statements
+lazy val Stmt: Parser[List[Token], Stmt] = (
+    (p"skip".map[Stmt]{_ => Skip }) ||
+    (IdParser ~ p":=" ~ AExp).map[Stmt]{ case x ~ _ ~ z => Assign(x, z) } ||
+    (p"read"  ~ IdParser).map[Stmt]{ case  _ ~ y => Read(y) }     ||
+    (p"write" ~ IdParser ).map[Stmt]{ case _ ~ y => WriteVar(y) } ||
+    (p"write" ~ StrParser).map[Stmt]{ case _ ~ y => WriteStr(y) } ||
+    (p"write" ~ p"(" ~ IdParser  ~ p")").map[Stmt]{ case _ ~ _ ~ y ~ _ => WriteVar(y) } ||
+    (p"write" ~ p"(" ~ StrParser ~ p")").map[Stmt]{ case _ ~ _ ~ y ~ _ => WriteStr(y) } ||
+    (p"if" ~ BExp ~ p"then" ~ Block ~ p"else" ~ Block)
+      .map[Stmt]{ case _ ~ y ~ _ ~ u ~ _ ~ w => If(y, u, w) } ||
+    (p"while" ~ BExp ~ p"do" ~ Block).map[Stmt]{ case _ ~ y ~ _ ~ w => While(y, w) }
+)
 
-// statements
-lazy val Stmts: Parser[String, Block] =
+//=> one or more statements or blocks of statements
+lazy val Stmts: Parser[List[Token], Block] =
   (Stmt ~ p";" ~ Stmts).map[Block]{ case x ~ _ ~ z => x :: z } ||
   (Stmt.map[Block]{ s => List(s) })
 
-// blocks (enclosed in curly braces)
-lazy val Block: Parser[String, Block] =
+//=> blocks (statement(s) enclosed in curly braces)
+lazy val Block: Parser[List[Token], Block] =
   ((p"{" ~ Stmts ~ p"}").map{ case _ ~ y ~ _ => y } ||
    (Stmt.map(s => List(s))))
 
+val Program = Stmts; // top-level of a program is statements/block
 
-// // Examples
-// Stmt.parse_all("x2:=5+3")
-// Block.parse_all("{x:=5;y:=8}")
-// Block.parse_all("if(false)then{x:=5}else{x:=10}")
-
-
-val fib = """n := 10;
-             minus1 := 0;
-             minus2 := 1;
-             temp := 0;
-             while (n > 0) do {
-                 temp := minus2;
-                 minus2 := minus1 + minus2;
-                 minus1 := temp;
-                 n := n - 1
-             };
-             result := minus2""".replaceAll("\\s+", "")
-
-// Stmts.parse_all(fib)
-
+//================================================
+// === Interpreter ===============================
 
 // an interpreter for the WHILE language
+// N.B.: 'newlines' bool determines whether each 'write' statement is printed on a new line (true), or as a single stream
+
 type Env = Map[String, Int]
 
 def eval_aexp(a: AExp, env: Env) : Int = a match {
   case Num(i) => i
   case Var(s) => env(s)
-  case Aop("+", a1, a2) => eval_aexp(a1, env) + eval_aexp(a2, env)
-  case Aop("-", a1, a2) => eval_aexp(a1, env) - eval_aexp(a2, env)
-  case Aop("*", a1, a2) => eval_aexp(a1, env) * eval_aexp(a2, env)
-  case Aop("/", a1, a2) => eval_aexp(a1, env) / eval_aexp(a2, env)
+  case ApplyArithOp("+", a1, a2) => eval_aexp(a1, env) + eval_aexp(a2, env)
+  case ApplyArithOp("-", a1, a2) => eval_aexp(a1, env) - eval_aexp(a2, env)
+  case ApplyArithOp("*", a1, a2) => eval_aexp(a1, env) * eval_aexp(a2, env)
+  case ApplyArithOp("/", a1, a2) => eval_aexp(a1, env) / eval_aexp(a2, env)
+  case ApplyArithOp("%", a1, a2) => eval_aexp(a1, env) % eval_aexp(a2, env)
 }
 
 def eval_bexp(b: BExp, env: Env) : Boolean = b match {
   case True => true
   case False => false
-  case Bop("==", a1, a2) => eval_aexp(a1, env) == eval_aexp(a2, env)
-  case Bop("!=", a1, a2) => !(eval_aexp(a1, env) == eval_aexp(a2, env))
-  case Bop(">", a1, a2) => eval_aexp(a1, env) > eval_aexp(a2, env)
-  case Bop("<", a1, a2) => eval_aexp(a1, env) < eval_aexp(a2, env)
-  case And(b1, b2) => eval_bexp(b1, env) && eval_bexp(b2, env)
-  case Or(b1, b2) => eval_bexp(b1, env) || eval_bexp(b2, env)
+  case ApplyBoolOp("==", a1, a2)  =>  eval_aexp(a1, env)  == eval_aexp(a2, env)
+  case ApplyBoolOp("!=", a1, a2)  => !(eval_aexp(a1, env) == eval_aexp(a2, env))
+  case ApplyBoolOp(">",  a1, a2)  =>  eval_aexp(a1, env)   > eval_aexp(a2, env)
+  case ApplyBoolOp("<",  a1, a2)  =>  eval_aexp(a1, env)   < eval_aexp(a2, env)
+  case ApplyBoolOp(">=", a1, a2)  =>  eval_aexp(a1, env)  >= eval_aexp(a2, env)
+  case ApplyBoolOp("<=", a1, a2)  =>  eval_aexp(a1, env)  <= eval_aexp(a2, env)
+  case And(b1, b2)                =>  eval_bexp(b1, env)  && eval_bexp(b2, env)
+  case Or (b1, b2)                =>  eval_bexp(b1, env)  || eval_bexp(b2, env)
 }
 
-def eval_stmt(s: Stmt, env: Env) : Env = s match {
-  case Skip => env
-  case Assign(x, a) => env + (x -> eval_aexp(a, env))
-  case If(b, bl1, bl2) => if (eval_bexp(b, env)) eval_bl(bl1, env) else eval_bl(bl2, env)
+def eval_stmt(s: Stmt, env: Env, newlines: Boolean) : Env = s match {
+  case Skip            => env
+  case Assign(x, a)    => env + (x -> eval_aexp(a, env))
+  case If(b, bl1, bl2) => if (eval_bexp(b, env)) eval_bl(bl1, env, newlines) else eval_bl(bl2, env, newlines)
   case While(b, bl) =>
-    if (eval_bexp(b, env)) eval_stmt(While(b, bl), eval_bl(bl, env))
+    if (eval_bexp(b, env)) eval_stmt(While(b, bl), eval_bl(bl, env, newlines), newlines)
     else env
-  case Write(x) => { println(env(x)) ; env }
+  case Read(v)     => { val x = scala.io.StdIn.readLine("prompt> "); eval_stmt(Assign(v, Num(x.toInt)), env, newlines) }
+  case WriteVar(x) => { val v = env(x); if (newlines) println(s"stdout> '$v'") else print(v); env }
+  case WriteStr(s) => { if (newlines) println(s"stdout> $s") else print(unescape(s).replaceAll("\n", "\nstdout> ")); env }
 }
 
-def eval_bl(bl: Block, env: Env) : Env = bl match {
+def eval_bl(bl: Block, env: Env, newlines: Boolean) : Env = bl match {
   case Nil => env
-  case s::bl => eval_bl(bl, eval_stmt(s, env))
+  case s::bl => eval_bl(bl, eval_stmt(s, env, newlines), newlines)
 }
 
-def eval(bl: Block) : Env = eval_bl(bl, Map())
+// interpreter entry point
+def eval(bl: Block, newlines: Boolean = true) : Env = {
+    if (!newlines) print("stdout> ");
+    eval_bl(bl, Map(), newlines)
+}
 
+//================================================
+// ============== MAIN ===========================
 
+// PROGRAM DEFINITIONS:
 
-
-// lex and parse program(s)
-println("\n========== fib.while ==========")
+// requires user input
 val fib_while =
-"""
-write "Fib";
+"""write "Fib";
 read n;
 minus1 := 0;
 minus2 := 1;
-while (n > 0) do {
+while n > 0 do {
        temp := minus2;
        minus2 := minus1 + minus2;
        minus1 := temp;
@@ -253,54 +270,160 @@ while (n > 0) do {
 write "Result";
 write minus2
 """
-println(fib_while)
 
-println("=========== PARSED AST ===========\n")
+// XXX - modify start value (default: 1000)
+val while_three_while =
+"""start := 300;
+x := start;
+y := start;
+z := start;
+while 0 < x do {
+ while 0 < y do {
+  while 0 < z do { z := z - 1 };
+  z := start;
+  y := y - 1
+ };
+ y := start;
+ x := x - 1
+}
+"""
 
-Stmts.parse_all(fib_while.replaceAll("\\s+", ""));
+val prime_while  =
+"""// prints out prime numbers from 2 to 100
 
-println("\n==================================\n")
+end := 100;
+n := 2;
+while (n < end) do {
+  f := 2;
+  tmp := 0;
+  while ((f < n / 2 + 1) && (tmp == 0)) do {
+    if ((n / f) * f == n) then  { tmp := 1 } else { skip };
+    f := f + 1
+  };
+  if (tmp == 0) then { write(n) } else { skip };
+  n  := n + 1
+}
+"""
 
+val collatz_while =
+"""// Collatz series
+//
+// needs writing of strings and numbers; comments
 
+bnd := 1;
+while bnd < 101 do {
+  write bnd;
+  write ": ";
+  n := bnd;
+  cnt := 0;
 
+  while n > 1 do {
+    write n;
+    write ",";
 
-// // parse + evaluate fib program; then lookup what is
-// // stored under the variable "result"
-// println(eval(Stmts.parse_all(fib).head)("result"))
+    if n % 2 == 0
+    then n := n / 2
+    else n := 3 * n+1;
 
+    cnt := cnt + 1
+  };
 
-// // more examles
+  write " => ";
+  write cnt;
+  write "\n";
+  bnd := bnd + 1
+}
+"""
 
-// // calculate and print all factors bigger
-// // than 1 and smaller than n
-// println("Factors")
+// === TEST PROGRAMS =================
+lex_parse_run_program(fib_while,         "fib.while");
+lex_parse_run_program(prime_while,       "primes.while");
+lex_parse_run_program(while_three_while, "loops.while",   do_time=true);
+lex_parse_run_program(collatz_while,     "collatz.while", stdout_newline=false, do_time=true);
 
-// val factors =
-//    """n := 12;
-//       f := 2;
-//       while (f < n / 2 + 1) do {
-//         if ((n / f) * f == n) then  { write(f) } else { skip };
-//         f := f + 1
-//       }""".replaceAll("\\s+", "")
+// === TEST HELPERS =================
 
-// println(eval(Stmts.parse_all(factors).head))
+// AST Pretty Printer
+def pprint(obj: Any, depth: Int = 0, paramName: Option[String] = None, toplevel: Boolean = false): Unit = {
+    val indent = "   " * depth
+    val pname = paramName.fold("")(x => s"$x: ")
+    val ptype = obj match {
+        case _: Iterable[Any] => ""                 // strip out "::" from iterable types
+        case obj: Product     => obj.productPrefix  // any form of tuple, i.e. any case class taking arguments
+        case _                => obj.toString       // for simple objects, just take their name
+    }
 
+    if (toplevel) {
+        println("Program");
+    } else {
+        println(s"$indent └→ $pname$ptype");
+    }
 
-// // calculate all prime numbers up to a number
-// println("Primes")
+    obj match {
+        case seq: Iterable[Any] => seq.foreach(pprint(_, depth + 1)) // recursively print all children
+        case obj: Product =>                                         // recursively print all arguments of current case class, and their children
+            (obj.productIterator zip obj.productElementNames).foreach {
+              case (subObj, paramName) => pprint(subObj, depth + 1, Some(paramName))
+            } // create tuple for each argument object, of the form (object, objectName) (see https://stackoverflow.com/a/55032051/5864825)
+        case _ =>                                                    // we are done in this branch! do nothing
+    }
+}
 
-// val primes =
-//    """end := 100;
-//       n := 2;
-//       while (n < end) do {
-//         f := 2;
-//         tmp := 0;
-//         while ((f < n / 2 + 1) && (tmp == 0)) do {
-//           if ((n / f) * f == n) then  { tmp := 1 } else { skip };
-//           f := f + 1
-//         };
-//         if (tmp == 0) then { write(n) } else { skip };
-//         n  := n + 1
-//       }""".replaceAll("\\s+", "")
+// Time a block of code and output time in seconds, return block value
+def time[R](block: => R): R = {
+    val start = System.nanoTime()
+    val result = block // call-by-name
+    val end = System.nanoTime()
+    val dur = (end-start)/1000000000.0;
+    println("Elapsed time: " + "%.3f".format(dur) + " seconds")
+    result
+}
 
-// println(eval(Stmts.parse_all(primes).head))
+// Given a program string, lex and parse it, then run it with the interpreter
+def lex_parse_run_program(
+    program_text: String,            // program code (while language)
+    program_name: String,            // filename of program
+    do_time: Boolean = false,        // time how long the program took to run?
+    stdout_newline: Boolean = true   // print each program 'write' on a newline?
+  ) = {
+    val title = s" $program_name ";
+    val fullwidth = "=====================================".length();
+    val padlength = ((fullwidth - title.length()) / 2).toInt;
+    println((("="*padlength) + title + ("="*padlength)).padTo(fullwidth, "=").mkString + "\n");
+    println(program_text);
+
+    println("=====================================");
+    println("============ LEXED TOKENS ===========\n");
+
+    val tokens = Lexer.tokenize_string_program(program_text);
+    Lexer.pretty_print_tokens(tokens);
+
+    println();
+    println("=====================================");
+    println("============= PARSED AST ============");
+
+    val parsed = Program.parse_all(tokens);
+
+    if (!parsed.isEmpty) {
+        pprint(parsed, toplevel=true);
+        println();
+        println("=====================================");
+        println("=== RUNNING PROGRAM (INTERPRETED) ===");
+        println(s"==> [$program_name]\n");
+
+        println(">running...\n")
+
+        val result = if (do_time) time{eval(parsed.head, stdout_newline)} else eval(parsed.head, stdout_newline);
+
+        println("\n>done!\n")
+        println("Resulting environment: (variable->value)")
+        result foreach {case (key, value) => val k = key.padTo(10," ").mkString;println(s" - $k => $value")}
+
+    } else {
+        println(parsed);
+        println("No AST was returned, not interpreting");
+    }
+
+    println("=====================================");
+    scala.io.StdIn.readLine("Press ENTER to continue...");
+}
