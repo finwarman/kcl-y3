@@ -11,14 +11,8 @@ import parser._
 // Global Const List
 val globals = collection.mutable.Map[String, String]()
 
-// Function Definitions:
-
-// - Return Types
+// Function Definitions Return Types
 val function_types = collection.mutable.Map[String, String]()
-// - Arguments (& associated types)
-val function_arg_types = collection.mutable.Map[String,collection.mutable.Map[String, String]]()
-// - Ordered list of types for each argument
-val function_arg_types_order = scala.collection.mutable.Map[String, List[String]]()
 
 // ==================================
 
@@ -57,7 +51,6 @@ case class Kdop(o: String, v1: KVal, v2: KVal) extends KVal // float operation
 case class KCall(o: String, vrs: List[KVal]) extends KVal   // function call
 case class KWrite(v: KVal) extends KVal
 
-// TODO - (skip hack)
 case class KNone() extends KVal                   // empty value (no code)
 case class KPass(e1: KVal, e2: KExp) extends KExp // generate current value and continue
 
@@ -78,7 +71,7 @@ case class KReturn(v: KVal) extends KExp // return value from function
 // Type Inference
 
 // Determine type of binary expression based on known operand types
-def type_of_bin_exp(lhs: KVal, rhs: KVal) =  (lhs, rhs) match {
+def type_of_bin_exp(lhs: KVal, rhs: KVal) = (lhs, rhs) match {
   case (KVar(_, "i32"), _) => "i32"
   case (_, KVar(_, "i32")) => "i32"
 
@@ -91,36 +84,48 @@ def type_of_bin_exp(lhs: KVal, rhs: KVal) =  (lhs, rhs) match {
   case (_, KFNum(_)) => "double"
   case (KFNum(_), _) => "double"
 
-  case _ => "UNDEF"
+  case _  => throw new Exception(
+    s"Type Inference Error for Binary Expression:\n-> ${lhs}\n-> ${rhs}")
+}
+
+def type_of_unary_exp(exp: KVal) = exp match {
+  case KVar(_, t)   if t != "UNDEF" => t
+  case KNum(_)      => "i32"
+  case KFNum(_)     => "double"
+  case _  =>  throw new Exception(
+    s"Type Inference Error for KVal: ${exp}")
+}
+
+// Generate the correct binary op K-expression for the given type (Kop / Kdop)
+def get_typed_kop_exp(typ: String, op: String, lhs: KVal, rhs: KVal) = typ match {
+  case "i32"    => Kop (op, lhs, rhs)
+  case "double" => Kdop(op, lhs, rhs)
+  case _  =>  throw new Exception(
+    s"Typing Error for '${op}' operation, Invalid Type: ${typ}")
 }
 
 // ==================================
 
 // CPS translation from Exps to KExps using a continuation k
-def CPS(e: Exp, fn: String)(k: KVal => KExp) : KExp = e match {
+def CPS(e: Exp, fn: String, env: Map[String, String])(k: KVal => KExp) : KExp = e match {
 
-  case Var(s) => if (globals.contains(s)) {
+  case Var(s) => if (globals.contains(s)) {   // type is known from global consts
                   val z = Fresh("glob_tmp")
-                  // give known type from global consts:
                   KLet(z, KGlob(s), k(KVar(z, globals(s))))
-                } else if (function_arg_types(fn).contains(s)) {
-                  // give known type from function parameters:
-                  val t = function_arg_types(fn)(s)
-                  k(KVar(s, t))
-                } else k(KVar(s)) // unknown type (currently) var
+                } else if (env.contains(s)) { // type is known from local var env
+                  k(KVar(s, env(s)))
+                } else k(KVar(s))             // var type is (currently) unknown
 
   case Num(i)  => k(KNum(i))
   case FNum(i) => k(KFNum(i))
 
   case ApplyArithOp(o, e1, e2) => {
     val z = Fresh("tmp")
-    CPS(e1, fn)(y1 =>
-      CPS(e2, fn)(y2 => {
+    CPS(e1, fn, env)(y1 =>
+      CPS(e2, fn, env)(y2 => {
         val exp_type = type_of_bin_exp(y1, y2)
         val kvar = KVar(z, exp_type)
-        val op   =  if      (exp_type == "i32")    { Kop (o, y1, y2) }
-                    else if (exp_type == "double") { Kdop(o, y1, y2) }
-                    else throw new Exception("Type Inference Error")
+        val op   = get_typed_kop_exp(exp_type, o, y1, y2)
         KLet(z, op, k(kvar))
       }
     ))
@@ -128,13 +133,11 @@ def CPS(e: Exp, fn: String)(k: KVal => KExp) : KExp = e match {
 
   case If(ApplyBoolOp(o, b1, b2), e1, e2) => {
     val z = Fresh("tmp")
-    CPS(b1, fn)(y1 =>
-      CPS(b2, fn)(y2 => {
+    CPS(b1, fn, env)(y1 =>
+      CPS(b2, fn, env)(y2 => {
         val exp_type = type_of_bin_exp(y1, y2)
-        val op   =  if      (exp_type == "i32")    { Kop (o, y1, y2) }
-                    else if (exp_type == "double") { Kdop(o, y1, y2) }
-                    else throw new Exception("Type Inference Error")
-        KLet(z, op, KIf(z, CPS(e1, fn)(k), CPS(e2, fn)(k)))
+        val op   = get_typed_kop_exp(exp_type, o, y1, y2)
+        KLet(z, op, KIf(z, CPS(e1, fn, env)(k), CPS(e2, fn, env)(k)))
       }
     ))
   }
@@ -146,25 +149,25 @@ def CPS(e: Exp, fn: String)(k: KVal => KExp) : KExp = e match {
           KPass(KCall(name, vs), k(KNone()))
         } else {
           val z = Fresh("tmp")
-          val call_type = type_to_llvm_type(function_types(name))
+          val call_type = function_types(name)
           KLet(z, KCall(name, vs), k(KVar(z, call_type)))
         }
       }
-      case e::es => CPS(e, fn)(y => aux(es, vs ::: List(y)))
+      case e::es => CPS(e, fn, env)(y => aux(es, vs ::: List(y)))
     }
     aux(args, Nil)
   }
 
   case Sequence(e1, e2) =>
-    CPS(e1, fn)(_ => CPS(e2, fn)(y2 => k(y2)))
+    CPS(e1, fn, env)(_ => CPS(e2, fn, env)(y2 => k(y2)))
   case Write(e) => {
     val z = Fresh("tmp")
-    CPS(e, fn)(y => KLet(z, KWrite(y), k(KVar(z))))
+    CPS(e, fn, env)(y => KLet(z, KWrite(y), k(KVar(z))))
   }
 }
 
 // Initial Continuation
-def CPSi(e: Exp, fn: String) = CPS(e, fn)(KReturn)
+def CPSi(e: Exp, fn: String, env: Map[String, String]) = CPS(e, fn, env)(KReturn)
 
 // ==================================
 
@@ -214,16 +217,10 @@ def compile_val(v: KVal) : String = v match {
   case Kop(op, x1, x2) => s"${compile_op(op)} ${compile_val(x1)}, ${compile_val(x2)}"
   case Kdop(op, x1, x2) => s"${compile_dop(op)} ${compile_val(x1)}, ${compile_val(x2)}"
 
-  case KCall(x1, args) =>
-    val call_type = function_types(x1)
-    if (args.isEmpty) {
-      s"call $call_type @$x1 ()"
-    } else {
-      val arg_types = args.zip(function_arg_types_order(x1));
-      println(arg_types);
-      val args_list = arg_types.map{case (v, t) => s"$t ${compile_val(v)}"}.mkString(",")
-      s"call $call_type @$x1 ($args_list)"
-    }
+  case KCall(x1, args) => {
+    val args_list = args.map(v => s"${type_of_unary_exp(v)} ${compile_val(v)}").mkString(",")
+    s"call ${function_types(x1)} @$x1 ($args_list)"
+  }
 
   case KWrite(x1) =>
     s"call i32 @printInt (i32 ${compile_val(x1)})"
@@ -327,27 +324,22 @@ def compile_decl(d: Decl) : String = d match {
   case Def(name, args, typ, body) => {
     function_types(name) = type_to_llvm_type(typ)
 
-    function_arg_types(name) = scala.collection.mutable.Map[String, String]()
-
-    args.map{case (n,t) => function_arg_types(name)(n) = type_to_llvm_type(t)}
-
-    val arg_list = ListBuffer[String]()
-    args.map{case (n,t) => arg_list += type_to_llvm_type(t)}
-    function_arg_types_order(name) = arg_list.toList
-
     val args_list = args.map{case (n,t) => s"${type_to_llvm_type(t)} %$n"}.mkString(", ");
+
+    // env - store list of known types for all variables (initially populate with argument types)
+    val env = args.map{case (n, t) => n -> type_to_llvm_type(t)}.toMap
+    println(env);
 
     val ret_type = function_types(name)
     m"define $ret_type @$name ($args_list) {" ++
-      compile_exp(CPSi(body, name)) ++
+      compile_exp(CPSi(body, name, env)) ++
     m"}\n"
   }
   case Main(body) => {
     function_types("main") = "i32"
-    function_arg_types("main") = scala.collection.mutable.Map[String, String]()
 
     m"define i32 @main() {" ++
-      compile_exp(CPS(body, "main")(_ => KReturn(KNum(0)))) ++
+      compile_exp(CPS(body, "main", Map())(_ => KReturn(KNum(0)))) ++
     m"}\n"
   }
 }
@@ -399,7 +391,8 @@ def lex_parse_write_run(code: String, program_name: String) = {
 // ==================================
 
 // Generate code for fun program and run:
-val prog = "mand"
+//val prog = "mand" // TODO
+val prog = "sqr"
 
 val code = load_program(prog)
 lex_parse_write_run(code, prog)
