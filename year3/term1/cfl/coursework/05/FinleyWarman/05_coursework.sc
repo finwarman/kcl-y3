@@ -11,7 +11,7 @@ import parser._
 // Global Const List
 val globals = collection.mutable.Map[String, String]()
 
-// Function Definitions Return Types
+// Function Return Types
 val function_types = collection.mutable.Map[String, String]()
 
 // ==================================
@@ -109,12 +109,14 @@ def get_typed_kop_exp(typ: String, op: String, lhs: KVal, rhs: KVal) = typ match
 // CPS translation from Exps to KExps using a continuation k
 def CPS(e: Exp, fn: String, env: Map[String, String])(k: KVal => KExp) : KExp = e match {
 
-  case Var(s) => if (globals.contains(s)) {   // type is known from global consts
-                  val z = Fresh("glob_tmp")
-                  KLet(z, KGlob(s), k(KVar(z, globals(s))))
-                } else if (env.contains(s)) { // type is known from local var env
-                  k(KVar(s, env(s)))
-                } else k(KVar(s))             // var type is (currently) unknown
+  case Var(s) => {
+    if (globals.contains(s)) {   // type is known from global consts
+      val z = Fresh("glob_tmp")
+      KLet(z, KGlob(s), k(KVar(z, globals(s))))
+    } else if (env.contains(s)) { // type is known from local var env
+      k(KVar(s, env(s)))
+    } else k(KVar(s))             // var type is (currently) unknown
+  }
 
   case Num(i)  => k(KNum(i))
   case FNum(i) => k(KFNum(i))
@@ -194,7 +196,7 @@ def compile_op(op: String) = op match {
   case "<=" => "icmp sle i32 "
   case "<"  => "icmp slt i32 "
 }
-// - Double (float)
+// - Double
 def compile_dop (op: String) = op match {
   case "+"  => "fadd double "
   case "*"  => "fmul double "
@@ -302,14 +304,15 @@ define void @print_int(i32 %x) {
 
 // ==================================
 
-function_types("printf")      = "i32"
-function_types("new_line")    = "void"
-function_types("print_star")  = "void"
-function_types("print_space") = "void"
-function_types("skip")        = "void"
-function_types("print_int")   = "void"
-
-import scala.collection.mutable.ListBuffer
+// populate prelude function return types
+Map(
+  "printf"      -> "i32",
+  "new_line"    -> "void",
+  "print_star"  -> "void",
+  "print_space" -> "void",
+  "skip"        -> "void",
+  "print_int"   -> "void",
+).map{case (f, t) => function_types(f) = t}
 
 // compile function for declarations and main
 def compile_decl(d: Decl) : String = d match {
@@ -322,16 +325,15 @@ def compile_decl(d: Decl) : String = d match {
     m"@$name = global double $v \n"
   }
   case Def(name, args, typ, body) => {
-    function_types(name) = type_to_llvm_type(typ)
+    val llvm_return_type = type_to_llvm_type(typ)
+    function_types(name) = llvm_return_type
+
+    // local env for known types of local variables, i.e. argument types
+    val env = args.map{case (n, t) => n -> type_to_llvm_type(t)}.toMap
 
     val args_list = args.map{case (n,t) => s"${type_to_llvm_type(t)} %$n"}.mkString(", ");
 
-    // env - store list of known types for all variables (initially populate with argument types)
-    val env = args.map{case (n, t) => n -> type_to_llvm_type(t)}.toMap
-    println(env);
-
-    val ret_type = function_types(name)
-    m"define $ret_type @$name ($args_list) {" ++
+    m"define $llvm_return_type @$name ($args_list) {" ++
       compile_exp(CPSi(body, name, env)) ++
     m"}\n"
   }
@@ -390,9 +392,11 @@ def lex_parse_write_run(code: String, program_name: String) = {
 
 // ==================================
 
-// Generate code for fun program and run:
-//val prog = "mand" // TODO
-val prog = "sqr"
+// Programs e.g.: "mand", "sqr", "test"
 
-val code = load_program(prog)
-lex_parse_write_run(code, prog)
+@main
+def main(prog: String = "mand") = {
+  // Generate code for fun program and run:
+  val code = load_program(prog)
+  lex_parse_write_run(code, prog)
+}

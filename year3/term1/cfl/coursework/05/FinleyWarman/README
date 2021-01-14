@@ -6,20 +6,30 @@ Coursework 05 - Finley Warman
 
 To Run:
 
-amm 05_coursework.sc
+    amm 05_coursework.sc {program_name}
+
+e.g.
+
+    amm 05_coursework.sc mand
 
 (from within 'FinleyWarman', current directory)
 
-Input Programs are found in 'FinleyWarman/Programs'
+Input Programs are found in 'FinleyWarman/Programs', and include:
+
+    mand.fun ("mand"), sqr.fun ("sqr"), test.fun ("test")
 
 Generated LLVM Code (and link files, binaries, etc.) are found in
-'FinleyWarman/build/{program name}'
+
+    'FinleyWarman/build/{program_name}'
+
+=================================================================
 
 Question 1 Submission:
 
 FinleyWarman/build/mand/mand.ll:
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 
 ; =============== Prelude ===============
 
@@ -150,3 +160,4 @@ define i32 @main() {
    call void @y_iter (double %glob_tmp_31)
    ret i32 0
 }
+

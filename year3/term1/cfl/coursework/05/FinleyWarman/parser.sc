@@ -134,7 +134,6 @@ case object FloatParser extends Parser[List[Token], Float] {
       case _ => Set();
   }
 }
-// TODO - use separate lex tokens for each?
 
 case object TypeParser extends Parser[List[Token], String] {
   def parse(toks: List[Token]) = toks match {
@@ -174,8 +173,8 @@ lazy val Exp:  Parser[List[Token], Exp] =
   (M ~ p";" ~ Exp).map[Exp]{ case x ~ _ ~ y => Sequence(x, y): Exp } || M
 
 lazy val M: Parser[List[Token], Exp] =
-  (IdParser ~ p"(" ~ ListParser(Exp, p",") ~ p")").map[Exp]{ case y ~ _ ~ args ~ _ => Call(y, args): Exp } || // TODO - allow IDs OR numeric values (of varying types)
-  (IdParser ~ p"(" ~ p")").map[Exp]{ case y ~ _ ~ _ => Call(y, Nil): Exp } || L // todo - is this valid? function calls?
+  (IdParser ~ p"(" ~ ListParser(Exp, p",") ~ p")").map[Exp]{ case y ~ _ ~ args ~ _ => Call(y, args): Exp } ||
+  (IdParser ~ p"(" ~ p")").map[Exp]{ case y ~ _ ~ _ => Call(y, Nil): Exp } || L
 
 lazy val L: Parser[List[Token], Exp] =
   (T ~ p"+" ~ Exp).map[Exp]{ case x ~ _ ~ z => ApplyArithOp("+", x, z): Exp } ||
